@@ -22,12 +22,17 @@ export default function App() {
   }, [theme]);
 
   return (
-    <div className={`command-canvas min-h-screen text-slate-100 ${theme === "light" ? "light-mode" : ""}`}>
+    <div className={`command-canvas min-h-screen overflow-hidden text-slate-100 ${theme === "light" ? "light-mode" : ""}`}>
       <div className="grid-glow pointer-events-none fixed inset-0" />
-      <header className="relative border-b border-slate-800/80 bg-[#081421]/85 px-5 py-4 backdrop-blur-xl lg:px-8">
+      <div className="aurora aurora-one pointer-events-none fixed" />
+      <div className="aurora aurora-two pointer-events-none fixed" />
+      <div className="data-particle particle-one pointer-events-none fixed">+</div>
+      <div className="data-particle particle-two pointer-events-none fixed">×</div>
+      <div className="data-particle particle-three pointer-events-none fixed">◦</div>
+      <header className="command-header relative border-b border-slate-800/80 bg-[#081421]/85 px-5 py-4 backdrop-blur-xl lg:px-8">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
+            <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">DecisionOS / command center</p>
               <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-white">Emergency allocation intelligence</h1>
@@ -60,7 +65,7 @@ export default function App() {
         <section className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-[.18em] text-slate-500">Operational picture / Sector 07</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h2 className="hero-title mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               {view === "builder" ? "Model the next move." : "Compare the trade-offs."}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
@@ -131,5 +136,5 @@ function NavButton({
 
 function MiniMetric({ label, value, tone }: { label: string; value: string; tone: "teal" | "blue" | "amber" }) {
   const color = { teal: "text-teal-300", blue: "text-sky-300", amber: "text-amber-300" }[tone];
-  return <div className="rounded-xl border border-slate-700/70 bg-slate-900/55 px-3 py-2.5"><p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p><p className={`mt-1 text-lg font-semibold ${color}`}>{value}</p></div>;
+  return <div className="mini-metric rounded-xl border border-slate-700/70 bg-slate-900/55 px-3 py-2.5"><p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p><p className={`mt-1 text-lg font-semibold ${color}`}>{value}</p></div>;
 }
