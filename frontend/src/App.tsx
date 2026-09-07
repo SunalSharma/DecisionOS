@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { USE_MOCKS } from "./api/client";
 import { PASS_FIXTURE_REQUEST } from "./api/mocks";
 import ResultCard from "./components/ResultCard";
@@ -7,39 +7,74 @@ import ScenarioBuilder from "./pages/ScenarioBuilder";
 import type { SimulateRequest, SimulateResponse } from "./types/domain";
 
 type View = "builder" | "compare";
+type Theme = "dark" | "light";
 
 export default function App() {
   const [view, setView] = useState<View>("builder");
+  const [theme, setTheme] = useState<Theme>(() =>
+    window.localStorage.getItem("decisionos-theme") === "light" ? "light" : "dark",
+  );
   const [scenario, setScenario] = useState<SimulateRequest>(PASS_FIXTURE_REQUEST);
   const [simulateResult, setSimulateResult] = useState<SimulateResponse | null>(null);
 
+  useEffect(() => {
+    window.localStorage.setItem("decisionos-theme", theme);
+  }, [theme]);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-950/90 px-6 py-4">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-400">
-              DecisionOS · Resonance 1.0 · PS7
-            </p>
-            <h1 className="mt-1 text-xl font-semibold">Emergency Resource Allocation</h1>
-            <p className="mt-1 text-sm text-slate-400">
-              {USE_MOCKS
-                ? "Running against mocked API responses (set VITE_USE_MOCKS=false for FastAPI)."
-                : `Live API · ${import.meta.env.VITE_API_BASE_URL}`}
-            </p>
+    <div className={`command-canvas min-h-screen text-slate-100 ${theme === "light" ? "light-mode" : ""}`}>
+      <div className="grid-glow pointer-events-none fixed inset-0" />
+      <header className="relative border-b border-slate-800/80 bg-[#081421]/85 px-5 py-4 backdrop-blur-xl lg:px-8">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">DecisionOS / command center</p>
+              <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-white">Emergency allocation intelligence</h1>
+            </div>
           </div>
-          <nav className="flex gap-2">
-            <NavButton active={view === "builder"} onClick={() => setView("builder")}>
-              Scenario builder
-            </NavButton>
-            <NavButton active={view === "compare"} onClick={() => setView("compare")}>
-              Compare variants
-            </NavButton>
-          </nav>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="hidden rounded-full border border-slate-700/80 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-300 sm:block">
+              <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-teal-300 signal-dot" />
+              {USE_MOCKS ? "Training data stream" : "Live decision engine"}
+            </div>
+            <nav className="flex rounded-xl border border-slate-700/80 bg-slate-900/70 p-1">
+              <NavButton active={view === "builder"} onClick={() => setView("builder")}>Plan</NavButton>
+              <NavButton active={view === "compare"} onClick={() => setView("compare")}>Explore</NavButton>
+            </nav>
+            <button
+              type="button"
+              onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+              className="theme-toggle rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-teal-400/50"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              <span aria-hidden="true">{theme === "dark" ? "☀" : "◐"}</span>
+              <span>{theme === "dark" ? "Light" : "Dark"}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="relative mx-auto max-w-[1440px] px-5 py-7 lg:px-8 lg:py-9">
+        <section className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[.18em] text-slate-500">Operational picture / Sector 07</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {view === "builder" ? "Model the next move." : "Compare the trade-offs."}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              {view === "builder"
+                ? "Build a defensible deployment plan. Every adjustment is evaluated against speed, coverage, cost, and hard operational limits."
+                : "Generate alternative plans, surface the best feasible decision, and make the compromise visible before deployment."}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[355px]">
+            <MiniMetric label="Readiness" value={`${Math.min(99, 55 + scenario.resources.teams * 4)}%`} tone="teal" />
+            <MiniMetric label="Assets" value={String(scenario.resources.vehicles)} tone="blue" />
+            <MiniMetric label="Target" value={`${scenario.constraints.deadline_min}m`} tone="amber" />
+          </div>
+        </section>
         {view === "builder" ? (
           <ScenarioBuilder
             value={scenario}
@@ -48,11 +83,18 @@ export default function App() {
             onResult={setSimulateResult}
             resultSlot={
               simulateResult ? (
-                <ResultCard data={simulateResult} />
+                <ResultCard data={simulateResult} scenario={scenario} />
               ) : (
-                <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400">
-                  Run a simulation to see response time, cost, coverage, risk, and constraint
-                  checks. FAIL results list each violation (name, limit, actual, message).
+                <div className="panel-surface relative overflow-hidden rounded-2xl border border-slate-700/70 p-7">
+                  <div className="absolute -right-10 -top-8 h-40 w-40 rounded-full border border-teal-400/15" />
+                  <p className="text-xs font-bold uppercase tracking-[.2em] text-teal-300">Decision canvas</p>
+                  <h3 className="mt-3 text-2xl font-semibold text-white">Your scenario is ready to model.</h3>
+                  <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Run the simulation to expose operational performance, constraint headroom, and an explainable recommendation.</p>
+                  <div className="mt-8 grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
+                    <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">01</b>Configure</div>
+                    <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">02</b>Simulate</div>
+                    <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">03</b>Decide</div>
+                  </div>
                 </div>
               )
             }
@@ -79,12 +121,15 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={`rounded-md px-3 py-2 text-sm font-medium ${
-        active
-          ? "bg-amber-500 text-slate-950"
-          : "border border-slate-700 text-slate-300 hover:border-slate-500"
+        active ? "bg-teal-400 text-slate-950 shadow-sm" : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-200"
       }`}
     >
       {children}
     </button>
   );
+}
+
+function MiniMetric({ label, value, tone }: { label: string; value: string; tone: "teal" | "blue" | "amber" }) {
+  const color = { teal: "text-teal-300", blue: "text-sky-300", amber: "text-amber-300" }[tone];
+  return <div className="rounded-xl border border-slate-700/70 bg-slate-900/55 px-3 py-2.5"><p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p><p className={`mt-1 text-lg font-semibold ${color}`}>{value}</p></div>;
 }
