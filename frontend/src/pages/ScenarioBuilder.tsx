@@ -113,7 +113,7 @@ export default function ScenarioBuilder({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-lg border border-teal-500/30 bg-teal-400/10 px-3 py-2 text-xs font-medium text-teal-200 transition hover:bg-teal-400/20"
+            className="preset-chip rounded-lg border border-teal-500/30 bg-teal-400/10 px-3 py-2 text-xs font-medium text-teal-200 transition hover:bg-teal-400/20"
             onClick={() => {
               onChange(PASS_FIXTURE_REQUEST);
               onResult(null);
@@ -123,7 +123,7 @@ export default function ScenarioBuilder({
           </button>
           <button
             type="button"
-            className="rounded-lg border border-rose-500/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 transition hover:bg-rose-400/20"
+            className="preset-chip rounded-lg border border-rose-500/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 transition hover:bg-rose-400/20"
             onClick={() => {
               onChange(FAIL_FIXTURE_REQUEST);
               onResult(null);
@@ -215,7 +215,7 @@ export default function ScenarioBuilder({
         <button
           type="submit"
           disabled={pending}
-          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-teal-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
+          className="run-action group flex w-full items-center justify-center gap-2 rounded-xl bg-teal-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
         >
           <span className="text-base">{pending ? "◌" : "↗"}</span>{pending ? "Refreshing live model…" : "Run simulation"}
         </button>

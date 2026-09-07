@@ -109,23 +109,6 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertIsNone(all_failed.recommended_scenario_id)
         self.assertTrue(all_failed.reasoning)
 
-    def test_infeasible_variants_fail_with_a_large_budget(self) -> None:
-        well_funded = Scenario(
-            id="well-funded",
-            name=None,
-            resources=Resources(teams=10, vehicles=10, budget=5_000_000),
-            constraints=Constraints(deadline_min=60, min_coverage_pct=0),
-            priorities=Priorities(speed=1, cost=1, coverage=1),
-        )
-        variants = generate_variants(well_funded, count=10, strategy="infeasible")
-        self.assertEqual(len(variants), 10)
-        for variant in variants:
-            with self.subTest(variant=variant.id):
-                self.assertEqual(
-                    check_constraints(variant, simulate(variant)).status,
-                    "FAIL",
-                )
-
     def test_generation_strategies_produce_distinct_pairs_for_small_and_large_bases(self) -> None:
         bases = [
             Scenario(
@@ -148,6 +131,9 @@ class DecisionEngineTests(unittest.TestCase):
             "cost_optimized",
             "balanced",
             "perturbed",
+            "speed",
+            "cost",
+            "coverage",
             "infeasible",
         )
         for base in bases:
@@ -160,6 +146,23 @@ class DecisionEngineTests(unittest.TestCase):
                     ]
                     self.assertEqual(len(variants), 10)
                     self.assertEqual(len(pairs), len(set(pairs)))
+
+    def test_infeasible_variants_fail_with_a_large_budget(self) -> None:
+        well_funded = Scenario(
+            id="well-funded",
+            name=None,
+            resources=Resources(teams=10, vehicles=10, budget=5_000_000),
+            constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        variants = generate_variants(well_funded, count=10, strategy="infeasible")
+        self.assertEqual(len(variants), 10)
+        for variant in variants:
+            with self.subTest(variant=variant.id):
+                self.assertEqual(
+                    check_constraints(variant, simulate(variant)).status,
+                    "FAIL",
+                )
 
 
 if __name__ == "__main__":

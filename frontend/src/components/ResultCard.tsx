@@ -31,7 +31,7 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
 
   return (
     <article
-      className={`panel-surface overflow-hidden rounded-2xl border shadow-2xl shadow-slate-950/30 ${
+      className={`result-reveal panel-surface overflow-hidden rounded-2xl border shadow-2xl shadow-slate-950/30 ${
         failed
           ? "border-rose-500/60"
           : "border-teal-400/35"
@@ -165,7 +165,7 @@ function Badge({
     "risk-high": "bg-rose-500/20 text-rose-100 border-rose-500",
     neutral: "bg-slate-800 text-slate-200 border-slate-600",
   }[tone];
-  return <span className={`rounded border px-2 py-1 font-medium ${cls}`}>{children}</span>;
+  return <span className={`outcome-badge rounded border px-2 py-1 font-medium ${cls}`}>{children}</span>;
 }
 
 function riskTone(risk: "LOW" | "MEDIUM" | "HIGH"): "risk-low" | "risk-med" | "risk-high" {

@@ -29,13 +29,21 @@ async function delay(ms = 350): Promise<void> {
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new Error(
+      `Can't reach the DecisionOS API at ${API_BASE_URL} — is the backend running?`,
+    );
+  }
+
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`API ${path} failed (${response.status}): ${body || response.statusText}`);
