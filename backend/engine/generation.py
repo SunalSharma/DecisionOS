@@ -24,7 +24,7 @@ def _scaled_step(resource_count: int) -> int:
 
 
 def _cost_optimized_pairs(teams: int, vehicles: int, count: int) -> list[tuple[int, int]]:
-    """Enumerate distinct, non-negative lower-cost resource pairs first."""
+    """Return distinct non-negative resource pairs, ordered by smallest reduction."""
     candidates = [
         (team_count, vehicle_count)
         for team_count in range(teams, -1, -1)
@@ -52,45 +52,57 @@ def generate_variants(
         raise ValueError("count must be non-negative")
 
     selected_strategy: Strategy = strategy or "balanced"
-    variants: list[Scenario] = []
-
     base_teams = base_scenario.resources.teams
     base_vehicles = base_scenario.resources.vehicles
     priorities = base_scenario.priorities
-
     team_step = _scaled_step(base_teams)
     vehicle_step = _scaled_step(base_vehicles)
-
-    uses_cost_pairs = selected_strategy in ("cost", "cost_optimized")
     cost_pairs = (
         _cost_optimized_pairs(base_teams, base_vehicles, count)
-        if uses_cost_pairs
+        if selected_strategy in ("cost", "cost_optimized")
         else None
     )
     variant_count = len(cost_pairs) if cost_pairs is not None else count
+    variants: list[Scenario] = []
 
-    for index in range(1, variant_count + 1):
+    for index in range(variant_count):
         teams = base_teams
         vehicles = base_vehicles
         variant_constraints = base_scenario.constraints
 
         if selected_strategy in ("speed", "speed_optimized"):
-            teams += team_step * index
-            vehicles += vehicle_step * index
-            variant_priorities = Priorities(speed=1.0, cost=0.0, coverage=0.0)
+            teams += team_step * (index + 1)
+            vehicles += vehicle_step * (index + 1)
+
+            variant_priorities = Priorities(
+                speed=1.0,
+                cost=0.0,
+                coverage=0.0,
+            )
 
         elif selected_strategy in ("cost", "cost_optimized"):
-            teams, vehicles = cost_pairs[index - 1]
-            variant_priorities = Priorities(speed=0.0, cost=1.0, coverage=0.0)
+            teams, vehicles = cost_pairs[index]
+
+            variant_priorities = Priorities(
+                speed=0.0,
+                cost=1.0,
+                coverage=0.0,
+            )
 
         elif selected_strategy == "coverage":
-            teams = base_teams + index + 1
-            vehicles = base_vehicles + index + 2
-            variant_priorities = Priorities(speed=0.0, cost=0.0, coverage=1.0)
+            teams = base_teams + team_step * (index + 1)
+            vehicles = base_vehicles + vehicle_step * (index + 2)
+
+            variant_priorities = Priorities(
+                speed=0.0,
+                cost=0.0,
+                coverage=1.0,
+            )
 
         elif selected_strategy == "balanced":
-            teams += team_step * index
-            vehicles += vehicle_step * ((index + 1) // 2)
+            teams += team_step * (index + 1)
+            vehicles += vehicle_step * ((index + 2) // 2)
+
             variant_priorities = Priorities(
                 speed=priorities.speed,
                 cost=priorities.cost,
@@ -98,8 +110,9 @@ def generate_variants(
             )
 
         elif selected_strategy == "perturbed":
-            teams += team_step * index
-            vehicles = max(0, vehicles - vehicle_step * index)
+            teams += team_step * (index + 1)
+            vehicles = max(0, vehicles - vehicle_step * (index + 1))
+
             variant_priorities = Priorities(
                 speed=priorities.speed,
                 cost=priorities.cost,
@@ -107,9 +120,8 @@ def generate_variants(
             )
 
         elif selected_strategy == "infeasible":
-            # A near-zero team count with no vehicles keeps coverage below the
-            # validated floor, guaranteeing a hard FAIL regardless of budget.
-            teams = index - 1
+            # At most nine teams cover 45%, below the validated 60% floor.
+            teams = index
             vehicles = 0
             variant_constraints = Constraints(
                 deadline_min=base_scenario.constraints.deadline_min,
@@ -118,6 +130,7 @@ def generate_variants(
                     MIN_COVERAGE_PCT,
                 ),
             )
+
             variant_priorities = Priorities(
                 speed=priorities.speed,
                 cost=priorities.cost,
@@ -125,12 +138,17 @@ def generate_variants(
             )
 
         else:
-            raise ValueError(f"Unknown generation strategy: {selected_strategy}")
+            raise ValueError(
+                f"Unknown generation strategy: {selected_strategy}"
+            )
 
         variants.append(
             Scenario(
-                id=f"{base_scenario.id}-variant-{index}",
-                name=f"{base_scenario.name or base_scenario.id} variant {index}",
+                id=f"{base_scenario.id}-variant-{index + 1}",
+                name=(
+                    f"{base_scenario.name or base_scenario.id} "
+                    f"variant {index + 1}"
+                ),
                 resources=Resources(
                     teams=teams,
                     vehicles=vehicles,
