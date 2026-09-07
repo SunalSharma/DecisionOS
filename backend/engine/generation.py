@@ -2,10 +2,17 @@
 
 from typing import Literal
 
-from .models import Priorities, Resources, Scenario
+from .domain_data import MIN_COVERAGE_PCT
+from .models import Constraints, Priorities, Resources, Scenario
 
 
-Strategy = Literal["speed_optimized", "cost_optimized", "balanced", "perturbed"]
+Strategy = Literal[
+    "speed_optimized",
+    "cost_optimized",
+    "balanced",
+    "perturbed",
+    "infeasible",
+]
 
 
 def generate_variants(
@@ -25,6 +32,7 @@ def generate_variants(
         teams = base_scenario.resources.teams
         vehicles = base_scenario.resources.vehicles
         priorities = base_scenario.priorities
+        variant_constraints = base_scenario.constraints
 
         if selected_strategy == "speed_optimized":
             teams += index
@@ -51,6 +59,22 @@ def generate_variants(
                 cost=priorities.cost,
                 coverage=priorities.coverage,
             )
+        elif selected_strategy == "infeasible":
+            # Zero capacity plus the validated coverage floor guarantees a hard failure.
+            teams = 0
+            vehicles = 0
+            variant_constraints = Constraints(
+                deadline_min=base_scenario.constraints.deadline_min,
+                min_coverage_pct=max(
+                    base_scenario.constraints.min_coverage_pct,
+                    MIN_COVERAGE_PCT,
+                ),
+            )
+            variant_priorities = Priorities(
+                speed=priorities.speed,
+                cost=priorities.cost,
+                coverage=priorities.coverage,
+            )
         else:
             raise ValueError(f"Unknown generation strategy: {selected_strategy}")
 
@@ -63,7 +87,7 @@ def generate_variants(
                     vehicles=vehicles,
                     budget=base_scenario.resources.budget,
                 ),
-                constraints=base_scenario.constraints,
+                constraints=variant_constraints,
                 priorities=variant_priorities,
             )
         )
