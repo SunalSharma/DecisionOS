@@ -22,20 +22,23 @@ export default function App() {
   }, [theme]);
 
   return (
-    <div className={`command-canvas min-h-screen overflow-hidden text-slate-100 ${theme === "light" ? "light-mode" : ""}`}>
+    <div className={`command-canvas min-h-screen text-slate-100 ${theme === "light" ? "light-mode" : ""}`}>
       <div className="grid-glow pointer-events-none fixed inset-0" />
       <div className="aurora aurora-one pointer-events-none fixed" />
       <div className="aurora aurora-two pointer-events-none fixed" />
+      <div className="energy-beam beam-one pointer-events-none fixed" />
+      <div className="energy-beam beam-two pointer-events-none fixed" />
       <div className="data-particle particle-one pointer-events-none fixed">+</div>
       <div className="data-particle particle-two pointer-events-none fixed">×</div>
       <div className="data-particle particle-three pointer-events-none fixed">◦</div>
       <header className="command-header relative border-b border-slate-800/80 bg-[#081421]/85 px-5 py-4 backdrop-blur-xl lg:px-8">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
+        <div className="header-shell mx-auto flex max-w-[1440px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="header-brand flex items-center gap-3">
             <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
-            <div>
+            <div className="brand-copy">
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">DecisionOS / command center</p>
-              <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-white">Emergency allocation intelligence</h1>
+              <h1 className="brand-title mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Emergency allocation intelligence</h1>
+              <p className="brand-quote"><span>“</span>AI that turns ‘send more vans’ into a plan you can defend.<span>”</span></p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -63,11 +66,17 @@ export default function App() {
 
       <main className="relative mx-auto max-w-[1440px] px-5 py-7 lg:px-8 lg:py-9">
         <section className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[.18em] text-slate-500">Operational picture / Sector 07</p>
-            <h2 className="hero-title mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              {view === "builder" ? "Model the next move." : "Compare the trade-offs."}
-            </h2>
+          <div className="hero-command">
+            <p className="hero-kicker text-xs font-medium uppercase tracking-[.18em] text-slate-500"><span className="kicker-signal" />Operational picture / Sector 07</p>
+            <div className="hero-title-wrap">
+              <span className="hero-orb orb-left" aria-hidden="true" />
+              <span className="hero-orb orb-right" aria-hidden="true" />
+              <h2 className="hero-title mt-3 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
+                {view === "builder" ? "Model the next move." : "Compare the trade-offs."}
+              </h2>
+              <span className="hero-underline" aria-hidden="true" />
+            </div>
+            <div className="hero-engine-badge"><span>✦</span> Live decision engine</div>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
               {view === "builder"
                 ? "Build a defensible deployment plan. Every adjustment is evaluated against speed, coverage, cost, and hard operational limits."
@@ -90,12 +99,20 @@ export default function App() {
               simulateResult ? (
                 <ResultCard data={simulateResult} scenario={scenario} />
               ) : (
-                <div className="panel-surface relative overflow-hidden rounded-2xl border border-slate-700/70 p-7">
+                <div className="decision-canvas panel-surface relative overflow-hidden rounded-2xl border border-slate-700/70 p-7">
                   <div className="absolute -right-10 -top-8 h-40 w-40 rounded-full border border-teal-400/15" />
+                  <div className="holo-stage" aria-hidden="true">
+                    <div className="holo-orbit orbit-a"><span /></div>
+                    <div className="holo-orbit orbit-b"><span /></div>
+                    <div className="holo-orbit orbit-c"><span /></div>
+                    <div className="holo-radar"><i /><i /><i /><b>◈</b></div>
+                    <div className="holo-node node-a" /><div className="holo-node node-b" /><div className="holo-node node-c" />
+                    <div className="holo-line line-a" /><div className="holo-line line-b" />
+                  </div>
                   <p className="text-xs font-bold uppercase tracking-[.2em] text-teal-300">Decision canvas</p>
                   <h3 className="mt-3 text-2xl font-semibold text-white">Your scenario is ready to model.</h3>
                   <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Run the simulation to expose operational performance, constraint headroom, and an explainable recommendation.</p>
-                  <div className="mt-8 grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
+                  <div className="decision-steps mt-8 grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
                     <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">01</b>Configure</div>
                     <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">02</b>Simulate</div>
                     <div className="rounded-xl border border-slate-700/70 bg-slate-950/35 p-3"><b className="block text-lg text-white">03</b>Decide</div>
