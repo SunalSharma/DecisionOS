@@ -2,6 +2,7 @@ import unittest
 
 from backend.engine.constraints import check_constraints
 from backend.engine.explanation import explain
+from backend.engine.generation import generate_variants
 from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
 from backend.engine.recommendation import rank, recommend
 from backend.engine.scoring import score
@@ -107,6 +108,58 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertFalse(all_failed.feasible)
         self.assertIsNone(all_failed.recommended_scenario_id)
         self.assertTrue(all_failed.reasoning)
+
+    def test_infeasible_variants_fail_with_a_large_budget(self) -> None:
+        well_funded = Scenario(
+            id="well-funded",
+            name=None,
+            resources=Resources(teams=10, vehicles=10, budget=5_000_000),
+            constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        variants = generate_variants(well_funded, count=10, strategy="infeasible")
+        self.assertEqual(len(variants), 10)
+        for variant in variants:
+            with self.subTest(variant=variant.id):
+                self.assertEqual(
+                    check_constraints(variant, simulate(variant)).status,
+                    "FAIL",
+                )
+
+    def test_generation_strategies_produce_distinct_pairs_for_small_and_large_bases(self) -> None:
+        bases = [
+            Scenario(
+                id="small",
+                name=None,
+                resources=Resources(teams=3, vehicles=3, budget=5_000_000),
+                constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+                priorities=Priorities(speed=1, cost=1, coverage=1),
+            ),
+            Scenario(
+                id="large",
+                name=None,
+                resources=Resources(teams=20, vehicles=20, budget=5_000_000),
+                constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+                priorities=Priorities(speed=1, cost=1, coverage=1),
+            ),
+        ]
+        strategies = (
+            "speed_optimized",
+            "cost_optimized",
+            "balanced",
+            "perturbed",
+            "infeasible",
+        )
+        for base in bases:
+            for strategy in strategies:
+                with self.subTest(base=base.id, strategy=strategy):
+                    variants = generate_variants(base, count=10, strategy=strategy)
+                    pairs = [
+                        (variant.resources.teams, variant.resources.vehicles)
+                        for variant in variants
+                    ]
+                    self.assertEqual(len(variants), 10)
+                    self.assertEqual(len(pairs), len(set(pairs)))
 
 
 if __name__ == "__main__":
