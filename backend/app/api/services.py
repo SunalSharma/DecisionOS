@@ -8,10 +8,13 @@ from .schemas import ScenarioInput, to_jsonable
 
 def build_scenario(payload: ScenarioInput, scenario_id: str | None = None):
     return engine.Scenario(
-        scenario_id=scenario_id or str(uuid4()),
+        id=scenario_id or str(uuid4()),
         name=payload.name,
         resources=engine.Resources(**payload.resources.model_dump()),
-        constraints=engine.Constraints(deadline_min=payload.constraints.deadline_min, min_coverage_pct=0.0),
+        constraints=engine.Constraints(
+            deadline_min=payload.constraints.deadline_min,
+            min_coverage_pct=engine.MIN_COVERAGE_PCT,
+        ),
         priorities=engine.Priorities(**payload.priorities.model_dump()),
     )
 
@@ -26,12 +29,11 @@ def run_pipeline(scenario, persisted: bool = False):
     score_breakdown = engine.score(scenario, result)
     explanation = engine.explain(scenario, result, constraint_check, score_breakdown)
     outcome = engine.ScenarioOutcome(
-        scenario_id=scenario_id(scenario),
+        scenario=scenario,
         result=result,
         constraint_check=constraint_check,
         score_breakdown=score_breakdown,
         explanation=explanation,
-        persisted=persisted,
     )
     return outcome
 
@@ -63,3 +65,4 @@ def set_persisted(outcome, persisted: bool):
         return replace(outcome, persisted=persisted)
     outcome.persisted = persisted
     return outcome
+

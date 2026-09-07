@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 try:  # pragma: no cover - exercised after the engine branch is merged
+    from backend.engine.domain_data import MIN_COVERAGE_PCT
     from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
     from backend.engine import (
         build_trade_offs,
@@ -21,6 +22,8 @@ try:  # pragma: no cover - exercised after the engine branch is merged
         simulate,
     )
 except (ImportError, ModuleNotFoundError):
+    MIN_COVERAGE_PCT = 60.0  # mirrors backend.engine.domain_data's default while that module is unavailable
+
     @dataclass
     class Resources:
         teams: int
