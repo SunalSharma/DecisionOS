@@ -47,8 +47,8 @@ export default function ResultCard({ data }: ResultCardProps) {
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge tone={failed ? "fail" : "pass"}>{data.constraint_check.status}</Badge>
-          <Badge tone={riskTone(result.risk)}>Risk {result.risk}</Badge>
-          <Badge tone="neutral">Score {data.score_breakdown.score}</Badge>
+          <Badge tone={riskTone(result.risk)}>{`Risk ${result.risk}`}</Badge>
+          <Badge tone="neutral">{`Score ${data.score_breakdown.score}`}</Badge>
         </div>
       </div>
 

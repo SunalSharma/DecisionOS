@@ -53,7 +53,7 @@ export default function TradeOffChart({ rows }: TradeOffChartProps) {
             cursor={{ strokeDasharray: "3 3" }}
             contentStyle={{ background: "#0f172a", border: "1px solid #334155", color: "#e2e8f0" }}
             formatter={(value, name) => [value, String(name)]}
-            labelFormatter={(_, payload) => payload?.[0]?.payload?.name ?? ""}
+            labelFormatter={(label) => String(label ?? "")}
           />
           <Scatter
             data={data.filter((d) => d.recommended && !d.fail)}
