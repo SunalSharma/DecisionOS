@@ -20,6 +20,12 @@ class PrioritiesInput(BaseModel):
     cost: float = Field(ge=0, le=1)
     coverage: float = Field(ge=0, le=1)
 
+    @model_validator(mode="after")
+    def priorities_must_sum_to_one(self) -> "PrioritiesInput":
+        if abs(self.speed + self.cost + self.coverage - 1) > 0.01:
+            raise ValueError("speed, cost, and coverage priorities must sum to 1")
+        return self
+
 
 class ScenarioInput(BaseModel):
     name: str | None = None
