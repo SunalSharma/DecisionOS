@@ -13,7 +13,7 @@ def generate_variants(
     count: int,
     strategy: Strategy | None = None,
 ) -> list[Scenario]:
-    """Create deterministic resource variants without mutating the base scenario."""
+    """Create deterministic variants; named *_optimized strategies intentionally use pure objective priorities."""
     if count < 0:
         raise ValueError("count must be non-negative")
 
