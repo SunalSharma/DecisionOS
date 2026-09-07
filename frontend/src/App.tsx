@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { USE_MOCKS } from "./api/client";
 import { PASS_FIXTURE_REQUEST } from "./api/mocks";
+import ResultCard from "./components/ResultCard";
 import ScenarioBuilder from "./pages/ScenarioBuilder";
 import type { SimulateRequest, SimulateResponse } from "./types/domain";
 
@@ -45,9 +46,14 @@ export default function App() {
             result={simulateResult}
             onResult={setSimulateResult}
             resultSlot={
-              <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400">
-                Run a simulation to see response time, cost, coverage, and constraint checks.
-              </div>
+              simulateResult ? (
+                <ResultCard data={simulateResult} />
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400">
+                  Run a simulation to see response time, cost, coverage, risk, and constraint
+                  checks. FAIL results list each violation (name, limit, actual, message).
+                </div>
+              )
             }
           />
         ) : (
