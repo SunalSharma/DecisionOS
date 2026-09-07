@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { USE_MOCKS } from "./api/client";
 import { PASS_FIXTURE_REQUEST } from "./api/mocks";
 import ResultCard from "./components/ResultCard";
+import ComparePage from "./pages/Compare";
 import ScenarioBuilder from "./pages/ScenarioBuilder";
 import type { SimulateRequest, SimulateResponse } from "./types/domain";
 
@@ -57,9 +58,7 @@ export default function App() {
             }
           />
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400">
-            Variant generation and ranking land next. Base scenario: {scenario.name ?? "unnamed"}.
-          </div>
+          <ComparePage baseScenario={scenario} />
         )}
       </main>
     </div>
