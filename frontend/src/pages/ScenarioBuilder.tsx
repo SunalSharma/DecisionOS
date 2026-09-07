@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { FAIL_FIXTURE_REQUEST, PASS_FIXTURE_REQUEST } from "../api/mocks";
 import { simulate } from "../api/client";
 import { prioritySum, setPriorityValue, type PriorityKey } from "../lib/priorities";
@@ -27,7 +27,36 @@ export default function ScenarioBuilder({
 }: ScenarioBuilderProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const requestVersion = useRef(0);
   const sum = useMemo(() => prioritySum(value.priorities), [value.priorities]);
+
+  useEffect(() => {
+    const version = ++requestVersion.current;
+    if (!isScenarioValid(value)) {
+      onResult(null);
+      setPending(false);
+      return;
+    }
+
+    setPending(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await simulate(value);
+        if (requestVersion.current === version) {
+          setError(null);
+          onResult(response);
+        }
+      } catch (err) {
+        if (requestVersion.current === version) {
+          setError(err instanceof Error ? err.message : "Simulation failed");
+        }
+      } finally {
+        if (requestVersion.current === version) setPending(false);
+      }
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [value, onResult]);
 
   function patch(partial: Partial<SimulateRequest>) {
     onChange({ ...value, ...partial });
@@ -42,8 +71,14 @@ export default function ScenarioBuilder({
     onChange({ ...value, priorities });
   }
 
-  async function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!event.currentTarget.checkValidity()) {
+      setError("Some values are out of range — check the highlighted field.");
+      event.currentTarget.reportValidity();
+      return;
+    }
+    requestVersion.current += 1;
     setPending(true);
     setError(null);
     onResult(null);
@@ -58,52 +93,57 @@ export default function ScenarioBuilder({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,29rem)_1fr]">
       <form
         onSubmit={onSubmit}
-        className="space-y-5 rounded-xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-slate-950/40"
+        onInvalidCapture={() =>
+          setError("Some values are out of range — check the highlighted field.")
+        }
+        className="panel-surface space-y-5 rounded-2xl border border-slate-700/70 p-5 shadow-2xl shadow-slate-950/30"
       >
-        <div>
-          <h2 className="text-lg font-semibold text-slate-50">Scenario builder</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Set allocation and priorities, then simulate a 48-hour emergency deployment.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-teal-300">Mission configuration</p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-50">Build a deployable plan</h2>
+            <p className="mt-1 text-sm leading-5 text-slate-400">Tune the response posture for the next 48 hours. Results refresh as you adjust.</p>
+          </div>
+          <span className="rounded-full border border-teal-400/25 bg-teal-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-teal-200">Draft</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-md border border-emerald-700/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-900/50"
+            className="rounded-lg border border-teal-500/30 bg-teal-400/10 px-3 py-2 text-xs font-medium text-teal-200 transition hover:bg-teal-400/20"
             onClick={() => {
               onChange(PASS_FIXTURE_REQUEST);
               onResult(null);
             }}
           >
-            Load PASS example
+            Balanced preset
           </button>
           <button
             type="button"
-            className="rounded-md border border-rose-700/60 bg-rose-950/40 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-900/50"
+            className="rounded-lg border border-rose-500/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 transition hover:bg-rose-400/20"
             onClick={() => {
               onChange(FAIL_FIXTURE_REQUEST);
               onResult(null);
             }}
           >
-            Load FAIL example
+            Stress test
           </button>
         </div>
 
         <label className="block text-sm">
-          <span className="text-slate-300">Scenario name</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Scenario label</span>
           <input
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-amber-500"
+            className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
             value={value.name ?? ""}
             onChange={(e) => patch({ name: e.target.value || null })}
             placeholder="e.g. Coastal surge"
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 border-y border-slate-800/80 py-5">
           <NumberField
             label="Teams"
             min={1}
@@ -121,7 +161,6 @@ export default function ScenarioBuilder({
           <NumberField
             label="Budget"
             min={5000}
-            max={500000}
             step={1000}
             value={value.resources.budget}
             onChange={(budget) => patchResources({ budget })}
@@ -137,11 +176,15 @@ export default function ScenarioBuilder({
           />
         </div>
 
-        <fieldset className="space-y-3 rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-          <legend className="px-1 text-sm font-medium text-slate-200">Priorities (sum = 1)</legend>
-          <p className={`text-xs ${sum === 1 ? "text-emerald-400" : "text-amber-400"}`}>
-            Current sum: {sum.toFixed(2)}
-          </p>
+        <section className="space-y-4 rounded-xl border border-slate-700/70 bg-slate-950/35 p-4">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <h3 className="text-sm font-semibold text-slate-200">Decision priorities</h3>
+            <span className="text-[10px] font-medium uppercase tracking-[.16em] text-slate-500">Weighting</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-500">Weight balance</span>
+            <span className={`rounded-full px-2 py-1 font-medium ${sum === 1 ? "bg-teal-400/10 text-teal-300" : "bg-amber-400/10 text-amber-300"}`}>Total {sum.toFixed(2)} / 1.00</span>
+          </div>
           {SLIDERS.map((slider) => (
             <label key={slider.key} className="block">
               <div className="mb-1 flex justify-between text-xs text-slate-400">
@@ -157,11 +200,11 @@ export default function ScenarioBuilder({
                 step={0.01}
                 value={value.priorities[slider.key]}
                 onChange={(e) => onPriority(slider.key, Number(e.target.value))}
-                className="w-full accent-amber-500"
+                className="w-full"
               />
             </label>
           ))}
-        </fieldset>
+        </section>
 
         {error ? (
           <p className="rounded-md border border-rose-800 bg-rose-950/50 px-3 py-2 text-sm text-rose-200">
@@ -172,9 +215,9 @@ export default function ScenarioBuilder({
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-amber-400 disabled:opacity-60"
+          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-teal-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
         >
-          {pending ? "Simulating…" : "Run simulation"}
+          <span className="text-base">{pending ? "◌" : "↗"}</span>{pending ? "Refreshing live model…" : "Run simulation"}
         </button>
         {result ? (
           <p className="text-xs text-slate-500">
@@ -186,6 +229,16 @@ export default function ScenarioBuilder({
       <div className="min-w-0">{resultSlot}</div>
     </div>
   );
+}
+
+function isScenarioValid(value: SimulateRequest) {
+  const { teams, vehicles, budget } = value.resources;
+  const { deadline_min } = value.constraints;
+  return [teams, vehicles, budget, deadline_min].every(Number.isFinite)
+    && teams >= 1 && teams <= 30
+    && vehicles >= 1 && vehicles <= 40
+    && budget >= 5000
+    && deadline_min >= 5 && deadline_min <= 180;
 }
 
 function NumberField({
@@ -200,12 +253,12 @@ function NumberField({
   value: number;
   onChange: (n: number) => void;
   min: number;
-  max: number;
+  max?: number;
   step?: number;
 }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-300">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</span>
       <input
         type="number"
         min={min}
@@ -213,7 +266,7 @@ function NumberField({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-amber-500"
+        className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
       />
     </label>
   );
