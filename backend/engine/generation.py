@@ -15,6 +15,29 @@ Strategy = Literal[
 ]
 
 
+def _scaled_step(resource_count: int) -> int:
+    """Return a deterministic, base-relative step that is never zero."""
+    return max(1, (resource_count + 4) // 5)
+
+
+def _cost_optimized_pairs(teams: int, vehicles: int, count: int) -> list[tuple[int, int]]:
+    """Enumerate distinct, non-negative lower-cost resource pairs first."""
+    candidates = [
+        (team_count, vehicle_count)
+        for team_count in range(teams, -1, -1)
+        for vehicle_count in range(vehicles, -1, -1)
+        if (team_count, vehicle_count) != (teams, vehicles)
+    ]
+    candidates.sort(
+        key=lambda pair: (
+            (teams - pair[0]) + (vehicles - pair[1]),
+            -pair[0],
+            -pair[1],
+        )
+    )
+    return candidates[:count]
+
+
 def generate_variants(
     base_scenario: Scenario,
     count: int,
@@ -26,42 +49,51 @@ def generate_variants(
 
     selected_strategy: Strategy = strategy or "balanced"
     variants: list[Scenario] = []
-    perturbations = ((1, 0), (0, 1), (-1, 1), (1, -1), (2, 0), (0, 2))
+    cost_pairs = (
+        _cost_optimized_pairs(
+            base_scenario.resources.teams,
+            base_scenario.resources.vehicles,
+            count,
+        )
+        if selected_strategy == "cost_optimized"
+        else None
+    )
+    variant_count = len(cost_pairs) if cost_pairs is not None else count
 
-    for index in range(1, count + 1):
+    for index in range(1, variant_count + 1):
         teams = base_scenario.resources.teams
         vehicles = base_scenario.resources.vehicles
         priorities = base_scenario.priorities
         variant_constraints = base_scenario.constraints
+        team_step = _scaled_step(teams)
+        vehicle_step = _scaled_step(vehicles)
 
         if selected_strategy == "speed_optimized":
-            teams += index
-            vehicles += index
+            teams += team_step * index
+            vehicles += vehicle_step * index
             variant_priorities = Priorities(speed=1.0, cost=0.0, coverage=0.0)
         elif selected_strategy == "cost_optimized":
-            teams = max(0, teams - index)
-            vehicles = max(0, vehicles - index)
+            teams, vehicles = cost_pairs[index - 1]
             variant_priorities = Priorities(speed=0.0, cost=1.0, coverage=0.0)
         elif selected_strategy == "balanced":
-            teams += index % 2
-            vehicles += (index + 1) % 2
+            teams += team_step * index
+            vehicles += vehicle_step * ((index + 1) // 2)
             variant_priorities = Priorities(
                 speed=priorities.speed,
                 cost=priorities.cost,
                 coverage=priorities.coverage,
             )
         elif selected_strategy == "perturbed":
-            team_delta, vehicle_delta = perturbations[(index - 1) % len(perturbations)]
-            teams = max(0, teams + team_delta)
-            vehicles = max(0, vehicles + vehicle_delta)
+            teams += team_step * index
+            vehicles = max(0, vehicles - vehicle_step * index)
             variant_priorities = Priorities(
                 speed=priorities.speed,
                 cost=priorities.cost,
                 coverage=priorities.coverage,
             )
         elif selected_strategy == "infeasible":
-            # Zero capacity plus the validated coverage floor guarantees a hard failure.
-            teams = 0
+            # At most nine teams covers 45%, below the validated 60% floor.
+            teams = index - 1
             vehicles = 0
             variant_constraints = Constraints(
                 deadline_min=base_scenario.constraints.deadline_min,
