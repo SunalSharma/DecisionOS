@@ -1,15 +1,12 @@
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
+  PolarAngleAxis,
+  PolarGrid,
 } from "recharts";
 import type { SimulateRequest, SimulateResponse } from "../types/domain";
-
-const RISK_SCORE = { LOW: 1, MEDIUM: 2, HIGH: 3 } as const;
 
 interface ResultCardProps {
   data: SimulateResponse;
@@ -22,11 +19,12 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
   const budgetHeadroom = scenario.resources.budget - result.cost;
   const deadlineBuffer = scenario.constraints.deadline_min - result.response_time_min;
 
-  const chartRows = [
-    { metric: "Response time (min)", value: result.response_time_min },
-    { metric: "Cost ($k)", value: Math.round(result.cost) / 1000 },
-    { metric: "Coverage %", value: result.coverage_pct },
-    { metric: "Risk (1–3)", value: RISK_SCORE[result.risk] },
+  const pulseRows = [
+    { metric: "Response", value: scoreResponse(result.response_time_min, scenario.constraints.deadline_min) },
+    { metric: "Cost control", value: scoreCost(result.cost, scenario.resources.budget) },
+    { metric: "Coverage", value: result.coverage_pct },
+    { metric: "Asset balance", value: Math.max(20, 100 - Math.abs(result.resource_utilization_pct - 82) * 2.2) },
+    { metric: "Resilience", value: { LOW: 94, MEDIUM: 62, HIGH: 28 }[result.risk] },
   ];
 
   return (
@@ -107,19 +105,45 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
           </p>
         )}
 
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="metric" tick={{ fill: "#94a3b8", fontSize: 11 }} interval={0} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ background: "#0f172a", border: "1px solid #334155", color: "#e2e8f0" }}
-              />
-              <Bar dataKey="value" fill={failed ? "#fb7185" : "#34d399"} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <section className="mission-pulse relative overflow-hidden rounded-2xl border border-teal-400/20 p-4">
+          <div className="pulse-scan" aria-hidden="true" />
+          <div className="relative z-10 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-teal-300">Mission pulse</p>
+              <h4 className="mt-1 text-base font-semibold text-white">Operational health signature</h4>
+            </div>
+            <span className={`pulse-score ${failed ? "text-rose-300" : "text-teal-300"}`}>{Math.round(data.score_breakdown.score)}<small>/100</small></span>
+          </div>
+          <div className="relative z-10 mt-1 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={pulseRows} outerRadius="69%">
+                <PolarGrid stroke="rgba(94,234,212,.27)" />
+                <PolarAngleAxis dataKey="metric" tick={{ fill: "#b8c8db", fontSize: 12, fontWeight: 600 }} />
+                <Radar
+                  name="Operational health"
+                  dataKey="value"
+                  stroke={failed ? "#fb7185" : "#2dd4bf"}
+                  fill={failed ? "#fb7185" : "#2dd4bf"}
+                  fillOpacity={0.31}
+                  animationDuration={1400}
+                  animationEasing="ease-out"
+                />
+                <Tooltip
+                  contentStyle={{ background: "#081421", border: "1px solid rgba(45,212,191,.55)", borderRadius: "12px", color: "#e2e8f0" }}
+                  formatter={(value) => [`${Math.round(Number(value))}/100`, "Signal strength"]}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="relative z-10 grid grid-cols-5 gap-1 border-t border-teal-400/15 pt-3">
+            {pulseRows.map((signal) => (
+              <div key={signal.metric} className="text-center">
+                <p className="text-[10px] text-slate-500">{signal.metric}</p>
+                <p className={`mt-1 text-sm font-bold ${failed ? "text-rose-200" : "text-teal-200"}`}>{Math.round(signal.value)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section>
           <h4 className="text-sm font-medium text-slate-200">Explanation</h4>
@@ -166,6 +190,14 @@ function Badge({
     neutral: "bg-slate-800 text-slate-200 border-slate-600",
   }[tone];
   return <span className={`outcome-badge rounded border px-2 py-1 font-medium ${cls}`}>{children}</span>;
+}
+
+function scoreResponse(response: number, deadline: number) {
+  return Math.max(5, Math.min(100, 100 - Math.max(0, response - deadline) * 8 - (response / deadline) * 18));
+}
+
+function scoreCost(cost: number, budget: number) {
+  return Math.max(5, Math.min(100, 100 - Math.max(0, cost - budget) / Math.max(budget, 1) * 100 - (cost / budget) * 36));
 }
 
 function riskTone(risk: "LOW" | "MEDIUM" | "HIGH"): "risk-low" | "risk-med" | "risk-high" {
