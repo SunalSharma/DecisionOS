@@ -38,6 +38,8 @@ def run_pipeline(scenario, persisted: bool = False):
 
 def persistence_record(scenario, outcome) -> dict:
     outcome_data = to_jsonable(outcome)
+    score = outcome_data.get("score_breakdown") or {}
+    constraint_check = outcome_data.get("constraint_check") or {}
     return {
         "scenario_id": scenario_id(scenario),
         "name": getattr(scenario, "name", None),
@@ -46,4 +48,18 @@ def persistence_record(scenario, outcome) -> dict:
         "constraint_check": outcome_data.get("constraint_check"),
         "score_breakdown": outcome_data.get("score_breakdown"),
         "explanation": outcome_data.get("explanation"),
+        "score": score.get("total", score.get("score")),
+        "constraint_status": constraint_check.get("passed", constraint_check.get("status")),
     }
+
+
+def set_persisted(outcome, persisted: bool):
+    """The fixture outcome is mutable; the real engine may use Pydantic models."""
+    if hasattr(outcome, "model_copy"):
+        return outcome.model_copy(update={"persisted": persisted})
+    if hasattr(outcome, "__dataclass_fields__"):
+        from dataclasses import replace
+
+        return replace(outcome, persisted=persisted)
+    outcome.persisted = persisted
+    return outcome
