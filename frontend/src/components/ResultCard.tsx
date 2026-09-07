@@ -7,17 +7,20 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { SimulateResponse } from "../types/domain";
+import type { SimulateRequest, SimulateResponse } from "../types/domain";
 
 const RISK_SCORE = { LOW: 1, MEDIUM: 2, HIGH: 3 } as const;
 
 interface ResultCardProps {
   data: SimulateResponse;
+  scenario: SimulateRequest;
 }
 
-export default function ResultCard({ data }: ResultCardProps) {
+export default function ResultCard({ data, scenario }: ResultCardProps) {
   const failed = data.constraint_check.status === "FAIL";
   const { result } = data;
+  const budgetHeadroom = scenario.resources.budget - result.cost;
+  const deadlineBuffer = scenario.constraints.deadline_min - result.response_time_min;
 
   const chartRows = [
     { metric: "Response time (min)", value: result.response_time_min },
@@ -28,21 +31,21 @@ export default function ResultCard({ data }: ResultCardProps) {
 
   return (
     <article
-      className={`overflow-hidden rounded-xl border shadow-xl shadow-slate-950/40 ${
+      className={`panel-surface overflow-hidden rounded-2xl border shadow-2xl shadow-slate-950/30 ${
         failed
-          ? "border-rose-600 bg-rose-950/25"
-          : "border-emerald-700/70 bg-slate-900/80"
+          ? "border-rose-500/60"
+          : "border-teal-400/35"
       }`}
     >
       <div
         className={`flex flex-wrap items-center justify-between gap-2 px-5 py-3 ${
-          failed ? "bg-rose-950/70" : "bg-emerald-950/50"
+          failed ? "bg-rose-950/50" : "bg-teal-400/8"
         }`}
       >
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-300">Simulation result</p>
-          <h3 className="text-lg font-semibold text-white">
-            {failed ? "Constraints FAILED" : "Constraints PASS"}
+          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Decision outcome</p>
+          <h3 className="mt-1 text-xl font-semibold text-white">
+            {failed ? "Plan needs attention" : "Plan is deployable"}
           </h3>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
@@ -52,15 +55,20 @@ export default function ResultCard({ data }: ResultCardProps) {
         </div>
       </div>
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-5 p-5 sm:p-6">
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <Stat label="Response time" value={`${result.response_time_min} min`} />
-          <Stat label="Cost" value={result.cost.toLocaleString()} />
+          <Stat label="Deployment cost" value={`$${result.cost.toLocaleString()}`} />
           <Stat label="Coverage" value={`${result.coverage_pct}%`} />
           <Stat label="Utilization" value={`${result.resource_utilization_pct}%`} />
           <Stat label="Demand covered" value={String(result.demand_covered)} />
           <Stat label="Scenario" value={data.scenario_id} mono />
         </dl>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ConstraintMeter label="Deadline buffer" value={`${deadlineBuffer >= 0 ? "+" : ""}${deadlineBuffer.toFixed(1)} min`} detail={`Target: ${scenario.constraints.deadline_min} min`} tone={deadlineBuffer >= 0 ? "teal" : "rose"} />
+          <ConstraintMeter label="Budget headroom" value={`${budgetHeadroom >= 0 ? "+" : "−"}$${Math.abs(budgetHeadroom).toLocaleString()}`} detail={`Limit: $${scenario.resources.budget.toLocaleString()}`} tone={budgetHeadroom >= 0 ? "teal" : "rose"} />
+        </div>
 
         {failed ? (
           <section className="rounded-lg border border-rose-600/80 bg-rose-950/40 p-4">
@@ -94,9 +102,8 @@ export default function ResultCard({ data }: ResultCardProps) {
             </div>
           </section>
         ) : (
-          <p className="rounded-md border border-emerald-800 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200">
-            Deadline and budget hold under this allocation. Review the score breakdown before
-            promoting the scenario.
+          <p className="rounded-xl border border-teal-400/20 bg-teal-400/8 px-3.5 py-3 text-sm leading-5 text-teal-100">
+            Hard constraints hold. This configuration is ready for a decision review—use the score and trade-offs to determine whether to promote it.
           </p>
         )}
 
@@ -125,6 +132,11 @@ export default function ResultCard({ data }: ResultCardProps) {
       </div>
     </article>
   );
+}
+
+function ConstraintMeter({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: "teal" | "rose" }) {
+  const cls = tone === "teal" ? "border-teal-400/20 bg-teal-400/5 text-teal-200" : "border-rose-400/20 bg-rose-400/5 text-rose-200";
+  return <div className={`rounded-xl border px-3.5 py-3 ${cls}`}><p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</p><p className="mt-1 text-base font-semibold">{value}</p><p className="mt-1 text-xs opacity-70">{detail}</p></div>;
 }
 
 function Stat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {

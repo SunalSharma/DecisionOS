@@ -2,6 +2,7 @@
 
 :root {
   color-scheme: dark;
+  font-synthesis: none;
 }
 
 html,
@@ -12,7 +13,69 @@ body,
 
 body {
   margin: 0;
-  font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  background: #0b1220;
+  font-family: Inter, "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  background: #07111f;
   color: #e8eef8;
 }
+
+* { box-sizing: border-box; }
+
+::selection { background: #2dd4bf55; color: #ecfeff; }
+
+.command-canvas {
+  background:
+    radial-gradient(circle at 78% -10%, rgba(20, 184, 166, .14), transparent 31rem),
+    radial-gradient(circle at 12% 18%, rgba(59, 130, 246, .11), transparent 26rem),
+    #07111f;
+}
+
+.grid-glow {
+  background-image: linear-gradient(rgba(148, 163, 184, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, .045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+.signal-dot { box-shadow: 0 0 0 4px rgba(45, 212, 191, .09), 0 0 16px rgba(45, 212, 191, .8); }
+.panel-surface { background: linear-gradient(145deg, rgba(17, 31, 52, .94), rgba(9, 19, 34, .88)); }
+.metric-number { letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
+.theme-toggle { display: inline-flex; align-items: center; gap: .45rem; }
+
+input[type="range"] { accent-color: #2dd4bf; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+
+.light-mode {
+  color-scheme: light;
+  background: #edf3f8;
+  color: #132033;
+}
+
+.light-mode.command-canvas {
+  background:
+    radial-gradient(circle at 82% -10%, rgba(20, 184, 166, .16), transparent 31rem),
+    radial-gradient(circle at 12% 18%, rgba(59, 130, 246, .13), transparent 27rem),
+    #edf3f8;
+}
+
+.light-mode .panel-surface { background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(242, 247, 251, .96)); }
+.light-mode header { background: rgba(248, 251, 253, .9) !important; }
+.light-mode .grid-glow { opacity: .55; }
+.light-mode [class*="bg-slate-950"], .light-mode [class*="bg-slate-900"] { background-color: rgba(255, 255, 255, .78) !important; }
+.light-mode [class*="border-slate-"] { border-color: #cbd7e4 !important; }
+.light-mode .border-slate-800\/80 { border-color: #d9e3ec !important; }
+.light-mode .text-white, .light-mode .text-slate-50, .light-mode .text-slate-100, .light-mode .text-slate-200 { color: #142237 !important; }
+.light-mode .text-slate-300 { color: #34465e !important; }
+.light-mode .text-slate-400 { color: #5a6c82 !important; }
+.light-mode .text-slate-500 { color: #718197 !important; }
+.light-mode .text-teal-300, .light-mode .text-teal-200 { color: #087f78 !important; }
+.light-mode .text-amber-300, .light-mode .text-amber-200 { color: #a65f00 !important; }
+.light-mode .text-rose-200 { color: #be3455 !important; }
+.light-mode [class*="bg-teal-400/"], .light-mode [class*="bg-emerald-950/"] { background-color: #d8f5f1 !important; }
+.light-mode [class*="border-teal-400/"] { border-color: #77d9d1 !important; }
+.light-mode [class*="bg-rose-400/"] { background-color: #ffe6eb !important; }
+.light-mode [class*="border-rose-400/"] { border-color: #f6adbd !important; }
+.light-mode .bg-teal-400 { background-color: #0faaa0 !important; color: #fff !important; }
+.light-mode .bg-teal-400:hover { background-color: #087f78 !important; }
+.light-mode .bg-amber-500 { background-color: #d97706 !important; color: #fff !important; }
+.light-mode .bg-rose-950\/50 { background-color: #fff0f3 !important; }
+.light-mode input, .light-mode select { color: #15243a !important; background-color: #fff !important; }
+.light-mode .theme-toggle { background: #fff !important; }
