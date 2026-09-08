@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.app.api import compare, recommend, scenarios, simulate
+from backend.app.api import engine_adapter
+from backend.engine.models import ScenarioOutcome
 
 
 class SuccessfulRepository:
@@ -54,6 +56,9 @@ class ApiContractTests(unittest.TestCase):
                 "coverage": 0.2,
             },
         }
+
+    def test_engine_adapter_uses_real_scenario_outcome(self):
+        self.assertIs(engine_adapter.ScenarioOutcome, ScenarioOutcome)
 
     def test_invalid_request_is_422(self):
         payload = {

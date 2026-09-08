@@ -23,7 +23,7 @@ def scenario_id(scenario) -> str:
     return str(getattr(scenario, "scenario_id", getattr(scenario, "id", "")))
 
 
-def run_pipeline(scenario, persisted: bool = False):
+def run_pipeline(scenario):
     result = engine.simulate(scenario)
     constraint_check = engine.check_constraints(scenario, result)
     score_breakdown = engine.score(scenario, result)
@@ -53,18 +53,6 @@ def persistence_record(scenario, outcome) -> dict:
         "score": score.get("total", score.get("score")),
         "constraint_status": constraint_check.get("passed", constraint_check.get("status")),
     }
-
-
-def set_persisted(outcome, persisted: bool):
-    """The fixture outcome is mutable; the real engine may use Pydantic models."""
-    if hasattr(outcome, "model_copy"):
-        return outcome.model_copy(update={"persisted": persisted})
-    if hasattr(outcome, "__dataclass_fields__"):
-        from dataclasses import replace
-
-        return replace(outcome, persisted=persisted)
-    outcome.persisted = persisted
-    return outcome
 
 
 def serialize_outcome(outcome, persisted: bool | None = None) -> dict:
