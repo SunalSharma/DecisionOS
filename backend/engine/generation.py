@@ -92,6 +92,11 @@ def generate_variants(
         if selected_strategy == "balanced"
         else None
     )
+    coverage_pairs = (
+        _balanced_pairs(base_teams, base_vehicles, count)
+        if selected_strategy == "coverage"
+        else None
+    )
     variant_count = len(cost_pairs) if cost_pairs is not None else count
     variants: list[Scenario] = []
 
@@ -120,8 +125,7 @@ def generate_variants(
             )
 
         elif selected_strategy == "coverage":
-            teams = base_teams + team_step * (index + 1)
-            vehicles = base_vehicles + vehicle_step * (index + 2)
+            teams, vehicles = coverage_pairs[index]
 
             variant_priorities = Priorities(
                 speed=0.0,

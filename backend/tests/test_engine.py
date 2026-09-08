@@ -184,6 +184,25 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertTrue(any(cost > base_cost for cost in costs))
         self.assertIn("PASS", statuses)
 
+    def test_coverage_variants_include_a_cost_competitive_feasible_option(self) -> None:
+        fully_covered = Scenario(
+            id="fully-covered",
+            name=None,
+            resources=Resources(teams=8, vehicles=16, budget=600_000),
+            constraints=Constraints(deadline_min=45, min_coverage_pct=60),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        base_cost = simulate(fully_covered).cost
+        variants = generate_variants(fully_covered, count=4, strategy="coverage")
+        costs = [simulate(variant).cost for variant in variants]
+        statuses = [
+            check_constraints(variant, simulate(variant)).status
+            for variant in variants
+        ]
+
+        self.assertTrue(any(cost <= base_cost for cost in costs))
+        self.assertIn("PASS", statuses)
+
 
 if __name__ == "__main__":
     unittest.main()
