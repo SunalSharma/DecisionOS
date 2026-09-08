@@ -66,3 +66,12 @@ def set_persisted(outcome, persisted: bool):
     outcome.persisted = persisted
     return outcome
 
+
+def serialize_outcome(outcome, persisted: bool | None = None) -> dict:
+    """Expose the engine outcome with a stable top-level scenario identifier."""
+    data = to_jsonable(outcome)
+    data["scenario_id"] = scenario_id(outcome.scenario)
+    if persisted is not None:
+        data["persisted"] = persisted
+    return data
+
