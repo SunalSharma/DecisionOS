@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from uuid import uuid4
 
 from . import engine_adapter as engine
@@ -61,15 +62,15 @@ def persistence_record(scenario, outcome) -> dict:
 
 
 def set_persisted(outcome, persisted: bool):
-    """The fixture outcome is mutable; the real engine may use Pydantic models."""
-    if hasattr(outcome, "model_copy"):
-        return outcome.model_copy(update={"persisted": persisted})
-    if hasattr(outcome, "__dataclass_fields__"):
-        from dataclasses import replace
+    """Return the outcome with the repository's answer recorded on it.
 
-        return replace(outcome, persisted=persisted)
-    outcome.persisted = persisted
-    return outcome
+    Every outcome reaching this comes from run_pipeline(), which builds the
+    engine's ScenarioOutcome dataclass, so replace() is the only case there
+    is. The model_copy() and attribute-assignment branches this used to carry
+    existed for the engine_adapter fallback and became unreachable when that
+    fallback was deleted.
+    """
+    return replace(outcome, persisted=persisted)
 
 
 def serialize_outcome(outcome, persisted: bool | None = None) -> dict:
@@ -80,7 +81,7 @@ def serialize_outcome(outcome, persisted: bool | None = None) -> dict:
     # on the outcome. Endpoints that never touch the repository (compare,
     # recommend) leave it unset, and those responses stay free of the key rather
     # than carrying a null that a client would have to interpret.
-    resolved = persisted if persisted is not None else getattr(outcome, "persisted", None)
+    resolved = persisted if persisted is not None else outcome.persisted
     if resolved is None:
         data.pop("persisted", None)
     else:
