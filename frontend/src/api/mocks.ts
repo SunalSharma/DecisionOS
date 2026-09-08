@@ -120,7 +120,7 @@ function evaluate(req: SimulateRequest): {
 
 export const PASS_FIXTURE_REQUEST: SimulateRequest = {
   name: "Coastal surge — balanced surge",
-  resources: { teams: 8, vehicles: 12, budget: 180000 },
+  resources: { teams: 8, vehicles: 12, budget: 500000 },
   constraints: { deadline_min: 45 },
   priorities: { speed: 0.4, cost: 0.25, coverage: 0.35 },
 };
