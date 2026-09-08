@@ -37,7 +37,7 @@ export default function App() {
             <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
             <div className="brand-copy">
               <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">DecisionOS / command center</p>
-              <h1 className="brand-title mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Emergency allocation intelligence</h1>
+              <h1 className="brand-title mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">Emergency allocation intelligence</h1>
               <p className="brand-quote"><span>“</span>AI that turns ‘send more vans’ into a plan you can defend.<span>”</span></p>
             </div>
           </div>
@@ -103,9 +103,11 @@ export default function App() {
                   <div className="absolute -right-10 -top-8 h-40 w-40 rounded-full border border-teal-400/15" />
                   <div className="holo-stage" aria-hidden="true">
                     <div className="holo-orbit orbit-a"><span /></div>
+                    <div className="holo-orbit orbit-b"><span /></div>
+                    <div className="holo-orbit orbit-c"><span /></div>
                     <div className="holo-radar"><i /><i /><i /><b>◈</b></div>
-                    <div className="holo-node node-a" />
-                    <div className="holo-line line-a" />
+                    <div className="holo-node node-a" /><div className="holo-node node-b" /><div className="holo-node node-c" />
+                    <div className="holo-line line-a" /><div className="holo-line line-b" />
                   </div>
                   <p className="text-xs font-bold uppercase tracking-[.2em] text-teal-300">Decision canvas</p>
                   <h3 className="mt-3 text-2xl font-semibold text-white">Your scenario is ready to model.</h3>

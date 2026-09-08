@@ -136,14 +136,14 @@ export default function ScenarioBuilder({
         <label className="block text-sm">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Scenario label</span>
           <input
-            className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
+            className="mission-name mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
             value={value.name ?? ""}
             onChange={(e) => patch({ name: e.target.value || null })}
             placeholder="e.g. Coastal surge"
           />
         </label>
 
-        <div className="grid grid-cols-2 gap-3 border-y border-slate-800/80 py-5">
+        <div className="resource-grid grid grid-cols-2 gap-3 border-y border-slate-800/80 py-5">
           <NumberField
             label="Teams"
             min={1}
@@ -159,7 +159,7 @@ export default function ScenarioBuilder({
             onChange={(vehicles) => patchResources({ vehicles })}
           />
           <NumberField
-            label="Budget"
+            label="Budget (₹)"
             min={5000}
             step={1000}
             value={value.resources.budget}
@@ -176,7 +176,7 @@ export default function ScenarioBuilder({
           />
         </div>
 
-        <section className="space-y-4 rounded-xl border border-slate-700/70 bg-slate-950/35 p-4">
+        <section className="priority-panel space-y-4 rounded-xl border border-slate-700/70 bg-slate-950/35 p-4">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <h3 className="text-sm font-semibold text-slate-200">Decision priorities</h3>
             <span className="text-[10px] font-medium uppercase tracking-[.16em] text-slate-500">Weighting</span>
@@ -186,10 +186,10 @@ export default function ScenarioBuilder({
             <span className={`rounded-full px-2 py-1 font-medium ${sum === 1 ? "bg-teal-400/10 text-teal-300" : "bg-amber-400/10 text-amber-300"}`}>Total {sum.toFixed(2)} / 1.00</span>
           </div>
           {SLIDERS.map((slider) => (
-            <label key={slider.key} className="block">
+            <label key={slider.key} className="priority-row block">
               <div className="mb-1 flex justify-between text-xs text-slate-400">
                 <span>
-                  {slider.label} <span className="text-slate-500">· {slider.hint}</span>
+                  <i className="priority-dot" />{slider.label} <span className="text-slate-500">· {slider.hint}</span>
                 </span>
                 <span className="font-mono text-slate-200">{value.priorities[slider.key].toFixed(2)}</span>
               </div>
@@ -256,9 +256,18 @@ function NumberField({
   max?: number;
   step?: number;
 }) {
+  const visual = {
+    Teams: "◉",
+    Vehicles: "↗",
+    "Budget (₹)": "₹",
+    "Deadline (min)": "◷",
+  }[label] ?? "•";
+
   return (
-    <label className="block text-sm">
-      <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</span>
+    <label className="resource-field block text-sm">
+      <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+        <i className="resource-glyph">{visual}</i>{label}
+      </span>
       <input
         type="number"
         min={min}

@@ -144,6 +144,9 @@ class ApiContractTests(unittest.TestCase):
                 for outcome in response.json()["outcomes"]
             )
         )
+        self.assertTrue(
+            all(outcome.get("scenario_id") for outcome in response.json()["outcomes"]),
+        )
 
     @patch(
         "backend.app.api.scenarios.SupabaseRepository",
@@ -182,6 +185,12 @@ class ApiContractTests(unittest.TestCase):
                 outcome["scenario_id"] == outcome["scenario"]["id"]
                 for outcome in response.json()["outcomes"]
             )
+        )
+        body = response.json()
+        self.assertTrue(body["outcomes"][0]["scenario_id"])
+        self.assertEqual(
+            body["outcomes"][0]["scenario_id"],
+            body["ranking"][0]["scenario_id"],
         )
 
     def test_recommend_response_shape(self):

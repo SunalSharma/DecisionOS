@@ -5,11 +5,20 @@ import ComparisonTable from "../components/ComparisonTable";
 import RecommendationPanel from "../components/RecommendationPanel";
 import TradeOffChart from "../components/TradeOffChart";
 import { joinCompareOutcomes } from "../lib/joinCompare";
+import { formatINR } from "../lib/currency";
 import type { CompareResponse, SimulateRequest } from "../types/domain";
 
 interface ComparePageProps {
   baseScenario: SimulateRequest;
 }
+
+const STRATEGIES = [
+  { value: "balanced", label: "Balanced", description: "Trade off speed, cost, and coverage" },
+  { value: "speed", label: "Speed First", description: "Prioritize faster response" },
+  { value: "cost", label: "Cost Efficient", description: "Prioritize budget control" },
+  { value: "coverage", label: "Maximum coverage", description: "Prioritize demand served" },
+  { value: "infeasible", label: "Stress Test", description: "Deliberately test hard constraints" },
+] as const;
 
 export default function ComparePage({ baseScenario }: ComparePageProps) {
   const [count, setCount] = useState(4);
@@ -19,6 +28,8 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
   const [result, setResult] = useState<CompareResponse | null>(null);
 
   const rows = useMemo(() => (result ? joinCompareOutcomes(result) : []), [result]);
+  const recommendedOutcome = rows.find((row) => row.recommended)?.outcome ?? null;
+  const selectedStrategy = STRATEGIES.find((option) => option.value === strategy) ?? STRATEGIES[0];
 
   async function run(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +44,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
       const generated = await generateScenarios({
         base_scenario: baseScenario,
         count,
-        strategy: strategy === "balanced" ? null : strategy,
+        strategy,
       });
       const compared = await compare({
         scenarios: generated.outcomes.map((o) => o.scenario),
@@ -61,7 +72,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
           <p className="mt-1 text-sm text-slate-400">
             Base: <span className="text-slate-200">{baseScenario.name ?? "unnamed"}</span> ·{" "}
             {baseScenario.resources.teams} teams · {baseScenario.resources.vehicles} vehicles ·
-            budget {baseScenario.resources.budget.toLocaleString()} · deadline{" "}
+            budget {formatINR(baseScenario.resources.budget)} · deadline{" "}
             {baseScenario.constraints.deadline_min} min
           </p>
         </div>
@@ -83,12 +94,15 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
             onChange={(e) => setStrategy(e.target.value)}
             className="mt-1.5 block rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 outline-none focus:border-teal-400"
           >
-            <option value="balanced">balanced (null)</option>
-            <option value="speed">speed</option>
-            <option value="cost">cost</option>
-            <option value="coverage">coverage</option>
-            <option value="infeasible">infeasible (mock stress)</option>
+            {STRATEGIES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
+          <span className="mt-1 block max-w-44 text-xs leading-4 text-slate-500">
+            {selectedStrategy.description}
+          </span>
         </label>
         <button
           type="submit"
@@ -114,7 +128,10 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
 
       {result ? (
         <>
-          <RecommendationPanel recommendation={result.recommendation} />
+          <RecommendationPanel
+            recommendation={result.recommendation}
+            outcome={recommendedOutcome}
+          />
           <ComparisonTable rows={rows} recommendation={result.recommendation} />
           <TradeOffChart rows={rows} />
         </>

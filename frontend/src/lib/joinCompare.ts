@@ -14,17 +14,16 @@ export interface JoinedOutcome {
  */
 export function joinCompareOutcomes(response: CompareResponse): JoinedOutcome[] {
   const recommendedId = response.recommendation.recommended_scenario_id;
+  const ranks = new Map(response.ranking.map((rank) => [rank.scenario_id, rank]));
+  const trades = new Map(response.trade_offs.map((trade) => [trade.scenario_id, trade]));
 
   return response.outcomes.map((outcome) => {
     const scenario_id = outcome.scenario_id;
-    const trade = response.trade_offs.find((t) => t.scenario_id === scenario_id);
-    const rank = response.ranking.find((r) => r.scenario_id === scenario_id);
-
     return {
       scenario_id,
       outcome,
-      rank,
-      trade,
+      rank: ranks.get(scenario_id),
+      trade: trades.get(scenario_id),
       recommended: Boolean(recommendedId && scenario_id === recommendedId),
     };
   });
