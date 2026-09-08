@@ -227,7 +227,8 @@ input[type="number"] { font-variant-numeric: tabular-nums; }
 .light-mode .text-slate-500 { color: #718197 !important; }
 .light-mode .text-teal-300, .light-mode .text-teal-200, .light-mode .text-teal-100 { color: #087f78 !important; }
 .light-mode .text-amber-300, .light-mode .text-amber-200 { color: #a65f00 !important; }
-.light-mode .text-rose-200, .light-mode .text-rose-100, .light-mode .text-rose-50 { color: #8f1835 !important; }
+.light-mode .text-rose-300, .light-mode .text-rose-200, .light-mode .text-rose-100, .light-mode .text-rose-50 { color: #8f1835 !important; }
+.light-mode .text-emerald-400, .light-mode .text-emerald-300, .light-mode .text-emerald-200, .light-mode [class*="text-emerald-200/"], .light-mode .text-emerald-100, .light-mode .text-emerald-50 { color: #0a7a4f !important; }
 .light-mode [class*="bg-teal-400/"], .light-mode [class*="bg-emerald-950/"] { background-color: #d8f5f1 !important; }
 .light-mode [class*="border-teal-400/"] { border-color: #77d9d1 !important; }
 .light-mode [class*="bg-rose-400/"] { background-color: #ffe6eb !important; }
