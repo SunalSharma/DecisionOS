@@ -219,11 +219,14 @@ export default function ScenarioBuilder({
         >
           <span className="text-base">{pending ? "◌" : "↗"}</span>{pending ? "Refreshing live model…" : "Run simulation"}
         </button>
+        {/* /api/simulate always attempts a save and always reports the answer,
+            so SimulateResponse.persisted is required and there is no
+            "not attempted" case to render here. The optional one is
+            ScenarioOutcome.persisted, from generate and compare - nothing
+            displays that yet. */}
         {result ? (
           <p className="text-xs text-slate-500">
-            Last run · {result.scenario_id} · {"persisted" in result
-              ? result.persisted ? "Saved" : "Not saved"
-              : "Save not attempted"}
+            Last run · {result.scenario_id} · {result.persisted ? "Saved" : "Not saved"}
           </p>
         ) : null}
       </form>
