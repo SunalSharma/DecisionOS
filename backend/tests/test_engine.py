@@ -164,6 +164,26 @@ class DecisionEngineTests(unittest.TestCase):
                     "FAIL",
                 )
 
+    def test_balanced_variants_explore_below_and_above_the_base_cost(self) -> None:
+        budget_constrained = Scenario(
+            id="budget-constrained",
+            name=None,
+            resources=Resources(teams=8, vehicles=12, budget=500_000),
+            constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        base_cost = simulate(budget_constrained).cost
+        variants = generate_variants(budget_constrained, count=4, strategy="balanced")
+        costs = [simulate(variant).cost for variant in variants]
+        statuses = [
+            check_constraints(variant, simulate(variant)).status
+            for variant in variants
+        ]
+
+        self.assertTrue(any(cost < base_cost for cost in costs))
+        self.assertTrue(any(cost > base_cost for cost in costs))
+        self.assertIn("PASS", statuses)
+
 
 if __name__ == "__main__":
     unittest.main()
