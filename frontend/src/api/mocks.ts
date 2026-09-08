@@ -193,7 +193,7 @@ export function mockGenerate(req: GenerateRequest): GenerateResponse {
   for (let i = 0; i < count; i += 1) {
     const scenario = variantOf(req.base_scenario, i, req.strategy);
     const evaluated = evaluate(scenario);
-    outcomes.push({ scenario_id: syntheticId(i, scenario), scenario, ...evaluated });
+    outcomes.push({ scenario_id: syntheticId(i, scenario), scenario, ...evaluated, persisted: true });
   }
   return { outcomes };
 }
@@ -203,7 +203,9 @@ function syntheticId(index: number, scenario: SimulateRequest): string {
 }
 
 function compareFromOutcomes(outcomes: ScenarioOutcome[]): CompareResponse {
-  const ranking: RankingEntry[] = outcomes
+  // /api/compare evaluates scenarios but never attempts to save them.
+  const compareOutcomes = outcomes.map(({ persisted: _persisted, ...outcome }) => outcome);
+  const ranking: RankingEntry[] = compareOutcomes
     .map((outcome) => ({
       scenario_id: outcome.scenario_id,
       rank: 0,
@@ -222,7 +224,7 @@ function compareFromOutcomes(outcomes: ScenarioOutcome[]): CompareResponse {
   const feasible = passing.length > 0;
   const recommended = feasible ? passing[0] : null;
 
-  const trade_offs: TradeOff[] = outcomes.map((outcome) => ({
+  const trade_offs: TradeOff[] = compareOutcomes.map((outcome) => ({
     scenario_id: outcome.scenario_id,
     response_time_min: outcome.result.response_time_min,
     cost: outcome.result.cost,
@@ -250,7 +252,7 @@ function compareFromOutcomes(outcomes: ScenarioOutcome[]): CompareResponse {
         ],
       };
 
-  return { outcomes, ranking, recommendation, trade_offs };
+  return { outcomes: compareOutcomes, ranking, recommendation, trade_offs };
 }
 
 const INFEASIBLE_BASE: SimulateRequest = {

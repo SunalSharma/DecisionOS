@@ -70,6 +70,8 @@ export interface ScenarioOutcome {
   constraint_check: ConstraintCheck;
   score_breakdown: ScoreBreakdown;
   explanation: string[];
+  /** Present only when the endpoint attempted to persist this outcome. */
+  persisted?: boolean;
 }
 
 export interface GenerateRequest {
