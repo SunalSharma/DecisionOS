@@ -12,6 +12,14 @@ interface ComparePageProps {
   baseScenario: SimulateRequest;
 }
 
+const STRATEGIES = [
+  { value: "balanced", label: "Balanced", description: "Trade off speed, cost, and coverage" },
+  { value: "speed", label: "Speed first", description: "Prioritize faster response" },
+  { value: "cost", label: "Cost efficient", description: "Prioritize budget control" },
+  { value: "coverage", label: "Maximum coverage", description: "Prioritize demand served" },
+  { value: "infeasible", label: "Stress test", description: "Deliberately test hard constraints" },
+] as const;
+
 export default function ComparePage({ baseScenario }: ComparePageProps) {
   const [count, setCount] = useState(4);
   const [strategy, setStrategy] = useState<string>("balanced");
@@ -20,6 +28,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
   const [result, setResult] = useState<CompareResponse | null>(null);
 
   const rows = useMemo(() => (result ? joinCompareOutcomes(result) : []), [result]);
+  const selectedStrategy = STRATEGIES.find((option) => option.value === strategy) ?? STRATEGIES[0];
 
   async function run(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,12 +93,15 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
             onChange={(e) => setStrategy(e.target.value)}
             className="mt-1.5 block rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 outline-none focus:border-teal-400"
           >
-            <option value="balanced">balanced (null)</option>
-            <option value="speed">speed</option>
-            <option value="cost">cost</option>
-            <option value="coverage">coverage</option>
-            <option value="infeasible">infeasible (mock stress)</option>
+            {STRATEGIES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
+          <span className="mt-1 block max-w-44 text-xs leading-4 text-slate-500">
+            {selectedStrategy.description}
+          </span>
         </label>
         <button
           type="submit"
