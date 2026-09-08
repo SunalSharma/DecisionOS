@@ -114,6 +114,9 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
             </div>
             <span className={`pulse-score ${failed ? "text-rose-300" : "text-teal-300"}`}>{Math.round(data.score_breakdown.score)}<small>/100</small></span>
           </div>
+          <p className="relative z-10 mt-1 text-[11px] text-slate-500">
+            Normalized signal strength for visual comparison — see the stats above for literal values.
+          </p>
           <div className="relative z-10 mt-1 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={pulseRows} outerRadius="69%">
