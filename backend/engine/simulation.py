@@ -1,38 +1,38 @@
 """Deterministic emergency resource-allocation simulation."""
 
-from .domain_data import (
-    BASE_RESPONSE_TIME,
-    COST_PER_TEAM,
-    COST_PER_VEHICLE,
-    FIXED_OPS_COST,
-    MIN_RESPONSE_TIME,
-    TEAM_CAPACITY,
-    TOTAL_DEMAND,
-    VEHICLE_CAPACITY,
-)
+from .domain_data import DEFAULT_PROFILE, IncidentProfile
 from .models import Scenario, SimulationResult
 from .risk import assess_risk
 
 
-def simulate(scenario: Scenario) -> SimulationResult:
-    """Simulate one scenario using the fixed emergency-response domain model."""
+def simulate(
+    scenario: Scenario,
+    profile: IncidentProfile = DEFAULT_PROFILE,
+) -> SimulationResult:
+    """Simulate one scenario using the supplied incident-domain profile."""
     teams = scenario.resources.teams
     vehicles = scenario.resources.vehicles
-    deployed_capacity = teams * TEAM_CAPACITY + vehicles * VEHICLE_CAPACITY
-    demand_covered = min(TOTAL_DEMAND, deployed_capacity)
-    coverage_pct = demand_covered / TOTAL_DEMAND * 100
+    deployed_capacity = teams * profile.team_capacity + vehicles * profile.vehicle_capacity
+    demand_covered = min(profile.total_demand, deployed_capacity)
+    coverage_pct = demand_covered / profile.total_demand * 100
 
     if deployed_capacity == 0:
         resource_utilization_pct = 0.0
         capacity_ratio = 0.0
     else:
         resource_utilization_pct = demand_covered / deployed_capacity * 100
-        capacity_ratio = deployed_capacity / TOTAL_DEMAND
+        capacity_ratio = deployed_capacity / profile.total_demand
 
-    response_time_min = MIN_RESPONSE_TIME + (BASE_RESPONSE_TIME - MIN_RESPONSE_TIME) / (
+    response_time_min = profile.min_response_time + (
+        profile.base_response_time - profile.min_response_time
+    ) / (
         1 + capacity_ratio
     )
-    cost = teams * COST_PER_TEAM + vehicles * COST_PER_VEHICLE + FIXED_OPS_COST
+    cost = (
+        teams * profile.cost_per_team
+        + vehicles * profile.cost_per_vehicle
+        + profile.fixed_ops_cost
+    )
     hard_constraints_failed = (
         cost > scenario.resources.budget
         or response_time_min > scenario.constraints.deadline_min
@@ -50,5 +50,6 @@ def simulate(scenario: Scenario) -> SimulationResult:
             coverage_pct,
             scenario.constraints.deadline_min,
             hard_constraints_failed,
+            profile,
         ),
     )

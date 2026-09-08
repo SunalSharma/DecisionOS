@@ -1,6 +1,7 @@
 import unittest
 
 from backend.engine.constraints import check_constraints
+from backend.engine.domain_data import DELIVERY_FLEET_CAPACITY_PLANNING_PROFILE
 from backend.engine.explanation import explain
 from backend.engine.generation import generate_variants
 from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
@@ -202,6 +203,49 @@ class DecisionEngineTests(unittest.TestCase):
 
         self.assertTrue(any(cost <= base_cost for cost in costs))
         self.assertIn("PASS", statuses)
+
+    def test_perturbed_variants_include_a_cost_competitive_feasible_option(self) -> None:
+        budget_constrained = Scenario(
+            id="perturbed-budget-constrained",
+            name=None,
+            resources=Resources(teams=8, vehicles=12, budget=500_000),
+            constraints=Constraints(deadline_min=60, min_coverage_pct=0),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        base_cost = simulate(budget_constrained).cost
+        variants = generate_variants(budget_constrained, count=4, strategy="perturbed")
+        costs = [simulate(variant).cost for variant in variants]
+        statuses = [
+            check_constraints(variant, simulate(variant)).status
+            for variant in variants
+        ]
+
+        self.assertTrue(any(cost <= base_cost for cost in costs))
+        self.assertIn("PASS", statuses)
+
+    def test_delivery_fleet_profile_supports_pass_and_fail_outcomes(self) -> None:
+        profile = DELIVERY_FLEET_CAPACITY_PLANNING_PROFILE
+        passing = Scenario(
+            id="delivery-pass",
+            name=None,
+            resources=Resources(teams=10, vehicles=8, budget=250_000),
+            constraints=Constraints(deadline_min=110, min_coverage_pct=70),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+        failing = Scenario(
+            id="delivery-fail",
+            name=None,
+            resources=Resources(teams=1, vehicles=0, budget=250_000),
+            constraints=Constraints(deadline_min=110, min_coverage_pct=70),
+            priorities=Priorities(speed=1, cost=1, coverage=1),
+        )
+
+        passing_result = simulate(passing, profile)
+        failing_result = simulate(failing, profile)
+        self.assertEqual(check_constraints(passing, passing_result, profile).status, "PASS")
+        self.assertEqual(check_constraints(failing, failing_result, profile).status, "FAIL")
+        self.assertEqual(passing_result.coverage_pct, 100.0)
+        self.assertLess(failing_result.coverage_pct, 70.0)
 
 
 if __name__ == "__main__":
