@@ -14,10 +14,10 @@ interface ComparePageProps {
 
 const STRATEGIES = [
   { value: "balanced", label: "Balanced", description: "Trade off speed, cost, and coverage" },
-  { value: "speed", label: "Speed first", description: "Prioritize faster response" },
-  { value: "cost", label: "Cost efficient", description: "Prioritize budget control" },
+  { value: "speed", label: "Speed First", description: "Prioritize faster response" },
+  { value: "cost", label: "Cost Efficient", description: "Prioritize budget control" },
   { value: "coverage", label: "Maximum coverage", description: "Prioritize demand served" },
-  { value: "infeasible", label: "Stress test", description: "Deliberately test hard constraints" },
+  { value: "infeasible", label: "Stress Test", description: "Deliberately test hard constraints" },
 ] as const;
 
 export default function ComparePage({ baseScenario }: ComparePageProps) {
@@ -28,6 +28,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
   const [result, setResult] = useState<CompareResponse | null>(null);
 
   const rows = useMemo(() => (result ? joinCompareOutcomes(result) : []), [result]);
+  const recommendedOutcome = rows.find((row) => row.recommended)?.outcome ?? null;
   const selectedStrategy = STRATEGIES.find((option) => option.value === strategy) ?? STRATEGIES[0];
 
   async function run(event: FormEvent<HTMLFormElement>) {
@@ -127,7 +128,10 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
 
       {result ? (
         <>
-          <RecommendationPanel recommendation={result.recommendation} />
+          <RecommendationPanel
+            recommendation={result.recommendation}
+            outcome={recommendedOutcome}
+          />
           <ComparisonTable rows={rows} recommendation={result.recommendation} />
           <TradeOffChart rows={rows} />
         </>

@@ -13,16 +13,17 @@ export default function ComparisonTable({ rows, recommendation }: ComparisonTabl
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/70">
       <table className="min-w-full text-left text-sm">
+        <caption className="sr-only">Generated scenario comparison</caption>
         <thead className="bg-slate-950/80 text-xs uppercase tracking-wide text-slate-400">
           <tr>
-            <th className="px-3 py-3">Rank</th>
-            <th className="px-3 py-3">Scenario</th>
-            <th className="px-3 py-3">Score</th>
-            <th className="px-3 py-3">Constraints</th>
-            <th className="px-3 py-3">Response</th>
-            <th className="px-3 py-3">Cost</th>
-            <th className="px-3 py-3">Coverage</th>
-            <th className="px-3 py-3">Risk</th>
+            <th scope="col" className="px-3 py-3">Rank</th>
+            <th scope="col" className="px-3 py-3">Scenario</th>
+            <th scope="col" className="px-3 py-3">Score</th>
+            <th scope="col" className="px-3 py-3">Constraints</th>
+            <th scope="col" className="px-3 py-3">Response</th>
+            <th scope="col" className="px-3 py-3">Cost</th>
+            <th scope="col" className="px-3 py-3">Coverage</th>
+            <th scope="col" className="px-3 py-3">Risk</th>
           </tr>
         </thead>
         <tbody>
@@ -40,7 +41,11 @@ export default function ComparisonTable({ rows, recommendation }: ComparisonTabl
                       : ""
                 }`}
               >
-                <td className="px-3 py-3 font-semibold text-slate-100">{row.rank?.rank ?? "—"}</td>
+                <td className="px-3 py-3 font-semibold text-slate-100">
+                  <span className="inline-flex min-w-7 justify-center rounded-full bg-slate-800 px-2 py-1 text-xs">
+                    {row.rank?.rank ?? "—"}
+                  </span>
+                </td>
                 <td className="px-3 py-3">
                   <div className="font-medium text-slate-100">
                     {row.outcome.scenario.name ?? "Unnamed"}
@@ -50,12 +55,13 @@ export default function ComparisonTable({ rows, recommendation }: ComparisonTabl
                       </span>
                     ) : null}
                   </div>
-                  <div className="font-mono text-[11px] text-slate-500">{row.scenario_id}</div>
                 </td>
-                <td className="px-3 py-3">{row.rank?.score ?? row.outcome.score_breakdown.score}</td>
+                <td className="px-3 py-3 font-semibold text-slate-100">
+                  {(row.rank?.score ?? row.outcome.score_breakdown.score).toFixed(1)}
+                </td>
                 <td className="px-3 py-3">
-                  <span className={fail ? "font-semibold text-rose-300" : "text-emerald-300"}>
-                    {row.outcome.constraint_check.status}
+                  <span className={fail ? "font-semibold text-rose-300" : "font-semibold text-emerald-300"}>
+                    {fail ? "✕ Constraint issue" : "✓ Feasible"}
                   </span>
                 </td>
                 <td className="px-3 py-3">{row.outcome.result.response_time_min} min</td>
