@@ -38,7 +38,7 @@ def run_pipeline(scenario, persisted: bool = False):
     return outcome
 
 
-def outcome_response(outcome) -> dict:
+def serialize_outcome(outcome) -> dict:
     """Serialize an outcome with the stable identifier used by ranking and trade-offs."""
     data = to_jsonable(outcome)
     data["scenario_id"] = scenario_id(getattr(outcome, "scenario", outcome))

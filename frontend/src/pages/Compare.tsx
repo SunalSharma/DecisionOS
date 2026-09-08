@@ -44,7 +44,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
       const generated = await generateScenarios({
         base_scenario: baseScenario,
         count,
-        strategy: strategy === "balanced" ? null : strategy,
+        strategy,
       });
       const compared = await compare({
         scenarios: generated.outcomes.map((o) => o.scenario),

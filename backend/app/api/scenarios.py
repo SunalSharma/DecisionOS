@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from . import engine_adapter as engine
 from .schemas import GenerateRequest
-from .services import build_scenario, outcome_response, persistence_record, run_pipeline
+from .services import build_scenario, persistence_record, run_pipeline, serialize_outcome
 from .supabase_repo import SupabaseRepository
 
 router = APIRouter()
@@ -24,7 +24,7 @@ def generate_scenarios(payload: GenerateRequest) -> dict:
             persistence_record(scenario, outcome)
         )
 
-        data = outcome_response(outcome)
+        data = serialize_outcome(outcome)
         data["persisted"] = persisted
         outcomes.append(data)
 
