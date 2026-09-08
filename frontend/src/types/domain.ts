@@ -62,8 +62,9 @@ export interface SimulateResponse {
   persisted: boolean;
 }
 
-/** Outcome shape returned by generate/compare (no top-level scenario_id wrapper). */
+/** Outcome shape returned by generate/compare, keyed by the originating scenario. */
 export interface ScenarioOutcome {
+  scenario_id: string;
   scenario: SimulateRequest;
   result: SimulationResult;
   constraint_check: ConstraintCheck;

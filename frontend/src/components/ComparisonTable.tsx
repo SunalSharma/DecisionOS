@@ -1,5 +1,6 @@
 import type { JoinedOutcome } from "../lib/joinCompare";
 import type { CompareResponse } from "../types/domain";
+import { formatINR } from "../lib/currency";
 
 interface ComparisonTableProps {
   rows: JoinedOutcome[];
@@ -58,7 +59,7 @@ export default function ComparisonTable({ rows, recommendation }: ComparisonTabl
                   </span>
                 </td>
                 <td className="px-3 py-3">{row.outcome.result.response_time_min} min</td>
-                <td className="px-3 py-3">{row.outcome.result.cost.toLocaleString()}</td>
+                <td className="px-3 py-3">{formatINR(row.outcome.result.cost)}</td>
                 <td className="px-3 py-3">{row.outcome.result.coverage_pct}%</td>
                 <td className="px-3 py-3">{row.outcome.result.risk}</td>
               </tr>

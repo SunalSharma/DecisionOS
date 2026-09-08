@@ -159,7 +159,7 @@ export default function ScenarioBuilder({
             onChange={(vehicles) => patchResources({ vehicles })}
           />
           <NumberField
-            label="Budget"
+            label="Budget (₹)"
             min={5000}
             step={1000}
             value={value.resources.budget}
@@ -259,7 +259,7 @@ function NumberField({
   const visual = {
     Teams: "◉",
     Vehicles: "↗",
-    Budget: "$",
+    "Budget (₹)": "₹",
     "Deadline (min)": "◷",
   }[label] ?? "•";
 

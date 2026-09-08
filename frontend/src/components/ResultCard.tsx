@@ -7,6 +7,7 @@ import {
   PolarGrid,
 } from "recharts";
 import type { SimulateRequest, SimulateResponse } from "../types/domain";
+import { formatINR } from "../lib/currency";
 
 interface ResultCardProps {
   data: SimulateResponse;
@@ -56,7 +57,7 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
       <div className="space-y-5 p-5 sm:p-6">
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <Stat label="Response time" value={`${result.response_time_min} min`} />
-          <Stat label="Deployment cost" value={`$${result.cost.toLocaleString()}`} />
+          <Stat label="Deployment cost" value={formatINR(result.cost)} />
           <Stat label="Coverage" value={`${result.coverage_pct}%`} />
           <Stat label="Utilization" value={`${result.resource_utilization_pct}%`} />
           <Stat label="Demand covered" value={String(result.demand_covered)} />
@@ -65,7 +66,7 @@ export default function ResultCard({ data, scenario }: ResultCardProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <ConstraintMeter label="Deadline buffer" value={`${deadlineBuffer >= 0 ? "+" : ""}${deadlineBuffer.toFixed(1)} min`} detail={`Target: ${scenario.constraints.deadline_min} min`} tone={deadlineBuffer >= 0 ? "teal" : "rose"} />
-          <ConstraintMeter label="Budget headroom" value={`${budgetHeadroom >= 0 ? "+" : "−"}$${Math.abs(budgetHeadroom).toLocaleString()}`} detail={`Limit: $${scenario.resources.budget.toLocaleString()}`} tone={budgetHeadroom >= 0 ? "teal" : "rose"} />
+          <ConstraintMeter label="Budget headroom" value={`${budgetHeadroom >= 0 ? "+" : "−"}${formatINR(Math.abs(budgetHeadroom))}`} detail={`Limit: ${formatINR(scenario.resources.budget)}`} tone={budgetHeadroom >= 0 ? "teal" : "rose"} />
         </div>
 
         {failed ? (

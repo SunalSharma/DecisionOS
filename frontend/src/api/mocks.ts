@@ -193,7 +193,7 @@ export function mockGenerate(req: GenerateRequest): GenerateResponse {
   for (let i = 0; i < count; i += 1) {
     const scenario = variantOf(req.base_scenario, i, req.strategy);
     const evaluated = evaluate(scenario);
-    outcomes.push({ scenario, ...evaluated });
+    outcomes.push({ scenario_id: syntheticId(i, scenario), scenario, ...evaluated });
   }
   return { outcomes };
 }
@@ -204,8 +204,8 @@ function syntheticId(index: number, scenario: SimulateRequest): string {
 
 function compareFromOutcomes(outcomes: ScenarioOutcome[]): CompareResponse {
   const ranking: RankingEntry[] = outcomes
-    .map((outcome, index) => ({
-      scenario_id: syntheticId(index, outcome.scenario),
+    .map((outcome) => ({
+      scenario_id: outcome.scenario_id,
       rank: 0,
       score: outcome.score_breakdown.score,
       constraint_status: outcome.constraint_check.status,
@@ -222,8 +222,8 @@ function compareFromOutcomes(outcomes: ScenarioOutcome[]): CompareResponse {
   const feasible = passing.length > 0;
   const recommended = feasible ? passing[0] : null;
 
-  const trade_offs: TradeOff[] = outcomes.map((outcome, index) => ({
-    scenario_id: syntheticId(index, outcome.scenario),
+  const trade_offs: TradeOff[] = outcomes.map((outcome) => ({
+    scenario_id: outcome.scenario_id,
     response_time_min: outcome.result.response_time_min,
     cost: outcome.result.cost,
     coverage_pct: outcome.result.coverage_pct,
@@ -266,7 +266,11 @@ export const INFEASIBLE_COMPARE_FIXTURE: CompareResponse = compareFromOutcomes(
 
 export function mockCompare(req: CompareRequest): CompareResponse {
   if ("scenarios" in req && req.scenarios?.length) {
-    const outcomes = req.scenarios.map((scenario) => ({ scenario, ...evaluate(scenario) }));
+    const outcomes = req.scenarios.map((scenario, index) => ({
+      scenario_id: syntheticId(index, scenario),
+      scenario,
+      ...evaluate(scenario),
+    }));
     return compareFromOutcomes(outcomes);
   }
 
@@ -277,7 +281,7 @@ export function mockCompare(req: CompareRequest): CompareResponse {
     };
     const outcomes = req.scenario_ids.map((id, index) => {
       const scenario = catalog[id] ?? variantOf(PASS_FIXTURE_REQUEST, index, null);
-      return { scenario, ...evaluate(scenario) };
+      return { scenario_id: syntheticId(index, scenario), scenario, ...evaluate(scenario) };
     });
     return compareFromOutcomes(outcomes);
   }

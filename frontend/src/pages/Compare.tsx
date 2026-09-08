@@ -5,6 +5,7 @@ import ComparisonTable from "../components/ComparisonTable";
 import RecommendationPanel from "../components/RecommendationPanel";
 import TradeOffChart from "../components/TradeOffChart";
 import { joinCompareOutcomes } from "../lib/joinCompare";
+import { formatINR } from "../lib/currency";
 import type { CompareResponse, SimulateRequest } from "../types/domain";
 
 interface ComparePageProps {
@@ -61,7 +62,7 @@ export default function ComparePage({ baseScenario }: ComparePageProps) {
           <p className="mt-1 text-sm text-slate-400">
             Base: <span className="text-slate-200">{baseScenario.name ?? "unnamed"}</span> ·{" "}
             {baseScenario.resources.teams} teams · {baseScenario.resources.vehicles} vehicles ·
-            budget {baseScenario.resources.budget.toLocaleString()} · deadline{" "}
+            budget {formatINR(baseScenario.resources.budget)} · deadline{" "}
             {baseScenario.constraints.deadline_min} min
           </p>
         </div>

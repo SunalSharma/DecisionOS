@@ -36,8 +36,8 @@ export default function App() {
           <div className="header-brand flex items-center gap-3">
             <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-lg text-teal-300">◈</div>
             <div className="brand-copy">
-              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">DecisionOS / command center</p>
-              <h1 className="brand-title mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Emergency allocation intelligence</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-teal-300">Decision-OS / command center</p>
+              <h1 className="brand-title mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">Emergency allocation intelligence</h1>
               <p className="brand-quote"><span>“</span>AI that turns ‘send more vans’ into a plan you can defend.<span>”</span></p>
             </div>
           </div>
