@@ -7,6 +7,7 @@ from .services import (
     persistence_record,
     run_pipeline,
     serialize_outcome,
+    set_persisted,
 )
 from .supabase_repo import SupabaseRepository
 
@@ -29,7 +30,11 @@ def generate_scenarios(payload: GenerateRequest) -> dict:
             persistence_record(scenario, outcome)
         )
 
-        outcomes.append(serialize_outcome(outcome, persisted=persisted))
+        # The flag now lives on the outcome itself rather than being spliced
+        # into the response dict, so anything downstream of the pipeline can see
+        # whether the run was saved.
+        outcome = set_persisted(outcome, persisted)
+        outcomes.append(serialize_outcome(outcome))
 
     return {"outcomes": outcomes}
 

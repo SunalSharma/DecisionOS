@@ -77,6 +77,12 @@ class ScenarioOutcome:
     constraint_check: ConstraintCheck
     score_breakdown: ScoreBreakdown
     explanation: list[str]
+    # Whether the API layer managed to persist this outcome. Stays None for
+    # standalone engine use - the engine never sets it and never reads it, so
+    # `backend/engine/` remains database-independent. None means "persistence
+    # was not attempted", which is distinct from False, "it was attempted and
+    # it failed".
+    persisted: bool | None = None
 
 
 @dataclass

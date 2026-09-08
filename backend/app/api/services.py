@@ -23,7 +23,7 @@ def scenario_id(scenario) -> str:
     return str(getattr(scenario, "scenario_id", getattr(scenario, "id", "")))
 
 
-def run_pipeline(scenario, persisted: bool = False):
+def run_pipeline(scenario, persisted: bool | None = None):
     result = engine.simulate(scenario)
     constraint_check = engine.check_constraints(scenario, result)
     score_breakdown = engine.score(scenario, result)
@@ -35,6 +35,11 @@ def run_pipeline(scenario, persisted: bool = False):
         score_breakdown=score_breakdown,
         explanation=explanation,
     )
+    # Callers that already know the persistence result can stamp it here;
+    # /api/scenarios/generate cannot, because it only learns the answer after
+    # the repository call, so it applies set_persisted() afterwards instead.
+    if persisted is not None:
+        outcome = set_persisted(outcome, persisted)
     return outcome
 
 
@@ -71,7 +76,14 @@ def serialize_outcome(outcome, persisted: bool | None = None) -> dict:
     """Expose the engine outcome with a stable top-level scenario identifier."""
     data = to_jsonable(outcome)
     data["scenario_id"] = scenario_id(outcome.scenario)
-    if persisted is not None:
-        data["persisted"] = persisted
+    # An explicit argument wins; otherwise take whatever set_persisted() stamped
+    # on the outcome. Endpoints that never touch the repository (compare,
+    # recommend) leave it unset, and those responses stay free of the key rather
+    # than carrying a null that a client would have to interpret.
+    resolved = persisted if persisted is not None else getattr(outcome, "persisted", None)
+    if resolved is None:
+        data.pop("persisted", None)
+    else:
+        data["persisted"] = resolved
     return data
 

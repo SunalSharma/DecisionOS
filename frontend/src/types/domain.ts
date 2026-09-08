@@ -70,7 +70,11 @@ export interface ScenarioOutcome {
   constraint_check: ConstraintCheck;
   score_breakdown: ScoreBreakdown;
   explanation: string[];
-  /** Present only when the endpoint attempted to persist this outcome. */
+  /**
+   * Present only on /api/scenarios/generate, which is the one path that writes
+   * to the repository. true saved, false attempted and failed, absent never
+   * attempted (compare and recommend) — so check for the key, not truthiness.
+   */
   persisted?: boolean;
 }
 
