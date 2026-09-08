@@ -69,6 +69,20 @@ class ApiContractTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
 
+    def test_priorities_that_do_not_sum_to_one_are_422(self):
+        payload = {
+            **self.payload,
+            "priorities": {
+                "speed": 0.5,
+                "cost": 0.4,
+                "coverage": 0.2,
+            },
+        }
+
+        response = self.client.post("/api/simulate", json=payload)
+
+        self.assertEqual(response.status_code, 422)
+
     @patch(
         "backend.app.api.simulate.SupabaseRepository",
         SuccessfulRepository,
@@ -124,6 +138,12 @@ class ApiContractTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["outcomes"]), 2)
+        self.assertTrue(
+            all(
+                outcome["scenario_id"] == outcome["scenario"]["id"]
+                for outcome in response.json()["outcomes"]
+            )
+        )
 
     @patch(
         "backend.app.api.scenarios.SupabaseRepository",
@@ -144,6 +164,12 @@ class ApiContractTests(unittest.TestCase):
             json={
                 "scenarios": [self.payload],
             },
+        )
+        self.assertTrue(
+            all(
+                outcome["scenario_id"] == outcome["scenario"]["id"]
+                for outcome in response.json()["outcomes"]
+            )
         )
 
         self.assertEqual(response.status_code, 200)
