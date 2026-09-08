@@ -221,7 +221,9 @@ export default function ScenarioBuilder({
         </button>
         {result ? (
           <p className="text-xs text-slate-500">
-            Last run · {result.scenario_id} · persisted {String(result.persisted)}
+            Last run · {result.scenario_id} · {"persisted" in result
+              ? result.persisted ? "Saved" : "Not saved"
+              : "Save not attempted"}
           </p>
         ) : null}
       </form>
