@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from .domain_data import MIN_COVERAGE_PCT
+from .domain_data import DEFAULT_PROFILE, IncidentProfile
 from .models import Constraints, Priorities, Resources, Scenario
 
 
@@ -66,10 +66,36 @@ def _balanced_pairs(teams: int, vehicles: int, count: int) -> list[tuple[int, in
     return pairs
 
 
+def _perturbed_pairs(teams: int, vehicles: int, count: int) -> list[tuple[int, int]]:
+    """Mix lower-cost and cross-resource perturbations around the base pair."""
+    lower_pairs = _cost_optimized_pairs(teams, vehicles, (count + 1) // 2)
+    team_step = _scaled_step(teams)
+    vehicle_step = _scaled_step(vehicles)
+    pairs: list[tuple[int, int]] = []
+    lower_index = 0
+    cross_index = 1
+
+    while len(pairs) < count:
+        if lower_index < len(lower_pairs):
+            pairs.append(lower_pairs[lower_index])
+            lower_index += 1
+            if len(pairs) == count:
+                break
+        pairs.append(
+            (
+                teams + team_step * cross_index,
+                max(0, vehicles - vehicle_step * cross_index),
+            )
+        )
+        cross_index += 1
+    return pairs
+
+
 def generate_variants(
     base_scenario: Scenario,
     count: int,
     strategy: Strategy | None = None,
+    profile: IncidentProfile = DEFAULT_PROFILE,
 ) -> list[Scenario]:
     """Create deterministic, distinct resource variants without mutating the base."""
 
@@ -97,6 +123,11 @@ def generate_variants(
         if selected_strategy == "coverage"
         else None
     )
+    perturbed_pairs = (
+        _perturbed_pairs(base_teams, base_vehicles, count)
+        if selected_strategy == "perturbed"
+        else None
+    )
     variant_count = len(cost_pairs) if cost_pairs is not None else count
     variants: list[Scenario] = []
 
@@ -106,6 +137,7 @@ def generate_variants(
         variant_constraints = base_scenario.constraints
 
         if selected_strategy in ("speed", "speed_optimized"):
+            # Pure speed optimization intentionally explores only more capacity.
             teams += team_step * (index + 1)
             vehicles += vehicle_step * (index + 1)
 
@@ -143,8 +175,7 @@ def generate_variants(
             )
 
         elif selected_strategy == "perturbed":
-            teams += team_step * (index + 1)
-            vehicles = max(0, vehicles - vehicle_step * (index + 1))
+            teams, vehicles = perturbed_pairs[index]
 
             variant_priorities = Priorities(
                 speed=priorities.speed,
@@ -160,7 +191,7 @@ def generate_variants(
                 deadline_min=base_scenario.constraints.deadline_min,
                 min_coverage_pct=max(
                     base_scenario.constraints.min_coverage_pct,
-                    MIN_COVERAGE_PCT,
+                    profile.min_coverage_pct,
                 ),
             )
 

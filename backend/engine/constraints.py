@@ -1,10 +1,16 @@
 """Hard feasibility checks for emergency-response scenarios."""
 
+from .domain_data import DEFAULT_PROFILE, IncidentProfile
 from .models import ConstraintCheck, ConstraintViolation, Scenario, SimulationResult
 
 
-def check_constraints(scenario: Scenario, result: SimulationResult) -> ConstraintCheck:
+def check_constraints(
+    scenario: Scenario,
+    result: SimulationResult,
+    profile: IncidentProfile = DEFAULT_PROFILE,
+) -> ConstraintCheck:
     """Return every violated hard constraint; feasible scenarios return PASS."""
+    del profile  # All domain operations accept a common profile; limits remain scenario inputs.
     violations: list[ConstraintViolation] = []
 
     if result.cost > scenario.resources.budget:

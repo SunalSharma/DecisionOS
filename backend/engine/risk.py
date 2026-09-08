@@ -1,5 +1,6 @@
 """Risk classification for simulated emergency-response scenarios."""
 
+from .domain_data import DEFAULT_PROFILE, IncidentProfile
 from .models import RiskLevel
 
 
@@ -12,8 +13,10 @@ def assess_risk(
     coverage_pct: float,
     deadline_min: float,
     hard_constraints_failed: bool = False,
+    profile: IncidentProfile = DEFAULT_PROFILE,
 ) -> RiskLevel:
     """Classify risk from deadline pressure and the uncovered-demand gap."""
+    del profile  # Risk formulas are unitless and profile-independent.
     if deadline_min <= 0:
         deadline_pressure = 1.0 if response_time_min > 0 else 0.0
     else:
