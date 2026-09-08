@@ -41,6 +41,31 @@ def _cost_optimized_pairs(teams: int, vehicles: int, count: int) -> list[tuple[i
     return candidates[:count]
 
 
+def _balanced_pairs(teams: int, vehicles: int, count: int) -> list[tuple[int, int]]:
+    """Alternate distinct lower-cost and higher-capacity pairs around a base."""
+    lower_pairs = _cost_optimized_pairs(teams, vehicles, (count + 1) // 2)
+    team_step = _scaled_step(teams)
+    vehicle_step = _scaled_step(vehicles)
+    pairs: list[tuple[int, int]] = []
+    lower_index = 0
+    upper_index = 1
+
+    while len(pairs) < count:
+        if lower_index < len(lower_pairs):
+            pairs.append(lower_pairs[lower_index])
+            lower_index += 1
+            if len(pairs) == count:
+                break
+        pairs.append(
+            (
+                teams + team_step * upper_index,
+                vehicles + vehicle_step * upper_index,
+            )
+        )
+        upper_index += 1
+    return pairs
+
+
 def generate_variants(
     base_scenario: Scenario,
     count: int,
@@ -60,6 +85,11 @@ def generate_variants(
     cost_pairs = (
         _cost_optimized_pairs(base_teams, base_vehicles, count)
         if selected_strategy in ("cost", "cost_optimized")
+        else None
+    )
+    balanced_pairs = (
+        _balanced_pairs(base_teams, base_vehicles, count)
+        if selected_strategy == "balanced"
         else None
     )
     variant_count = len(cost_pairs) if cost_pairs is not None else count
@@ -100,8 +130,7 @@ def generate_variants(
             )
 
         elif selected_strategy == "balanced":
-            teams += team_step * (index + 1)
-            vehicles += vehicle_step * ((index + 2) // 2)
+            teams, vehicles = balanced_pairs[index]
 
             variant_priorities = Priorities(
                 speed=priorities.speed,
