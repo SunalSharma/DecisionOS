@@ -3,6 +3,7 @@ import type {
   CompareResponse,
   GenerateRequest,
   GenerateResponse,
+  IncidentTypesResponse,
   RecommendRequest,
   RecommendResponse,
   ScenarioSummary,
@@ -12,6 +13,7 @@ import type {
 import {
   mockCompare,
   mockGenerate,
+  mockIncidentTypes,
   mockRecommend,
   mockSimulate,
   MOCK_SCENARIO_LIST,
@@ -101,4 +103,12 @@ export async function recommend(body: RecommendRequest): Promise<RecommendRespon
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function listIncidentTypes(): Promise<IncidentTypesResponse> {
+  if (USE_MOCKS) {
+    await delay(150);
+    return mockIncidentTypes();
+  }
+  return requestJson<IncidentTypesResponse>("/api/incident-types");
 }

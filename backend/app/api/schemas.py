@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from .engine_adapter import INCIDENT_PROFILES
 
 
 class ResourcesInput(BaseModel):
@@ -32,6 +34,14 @@ class ScenarioInput(BaseModel):
     resources: ResourcesInput
     constraints: ConstraintsInput
     priorities: PrioritiesInput
+    incident_type: str | None = None
+
+    @field_validator("incident_type")
+    @classmethod
+    def incident_type_must_be_known(cls, value: str | None) -> str | None:
+        if value is not None and value not in INCIDENT_PROFILES:
+            raise ValueError(f"Unknown incident_type: {value}")
+        return value
 
 
 class GenerateRequest(BaseModel):

@@ -109,6 +109,7 @@ class ApiContractTests(unittest.TestCase):
                 "score_breakdown",
                 "explanation",
                 "persisted",
+                "incident_type",
             },
         )
 
@@ -308,3 +309,134 @@ class PersistenceFlagTests(unittest.TestCase):
         from backend.app.api.services import run_pipeline, serialize_outcome
 
         self.assertNotIn("persisted", serialize_outcome(run_pipeline(self.scenario)))
+
+
+class IncidentDomainTests(unittest.TestCase):
+    """Round 3 item 3: a scenario can pick its incident domain instead of
+    silently running EMERGENCY_RESPONSE_PROFILE for every request."""
+
+    def setUp(self):
+        app = FastAPI()
+        app.include_router(simulate.router)
+        app.include_router(scenarios.router)
+        app.include_router(compare.router)
+
+        self.client = TestClient(app)
+
+        self.payload = {
+            "name": "Baseline",
+            "resources": {
+                "teams": 5,
+                "vehicles": 5,
+                "budget": 200000,
+            },
+            "constraints": {
+                "deadline_min": 60,
+            },
+            "priorities": {
+                "speed": 0.5,
+                "cost": 0.3,
+                "coverage": 0.2,
+            },
+        }
+
+    def test_incident_types_are_discoverable(self):
+        response = self.client.get("/api/incident-types")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["default"], "emergency_response")
+        ids = {entry["id"] for entry in body["incident_types"]}
+        self.assertEqual(ids, {"emergency_response", "delivery_fleet_capacity_planning"})
+        for entry in body["incident_types"]:
+            self.assertEqual(set(entry), {"id", "name", "total_demand", "min_coverage_pct"})
+
+    @patch("backend.app.api.simulate.SupabaseRepository", SuccessfulRepository)
+    def test_same_resources_score_differently_across_domains(self):
+        emergency = self.client.post(
+            "/api/simulate",
+            json={**self.payload, "incident_type": "emergency_response"},
+        ).json()
+        delivery = self.client.post(
+            "/api/simulate",
+            json={**self.payload, "incident_type": "delivery_fleet_capacity_planning"},
+        ).json()
+
+        self.assertNotEqual(
+            emergency["result"]["coverage_pct"], delivery["result"]["coverage_pct"]
+        )
+        self.assertNotEqual(emergency["result"]["cost"], delivery["result"]["cost"])
+
+    @patch("backend.app.api.simulate.SupabaseRepository", SuccessfulRepository)
+    def test_omitting_incident_type_matches_emergency_response(self):
+        implicit = self.client.post("/api/simulate", json=self.payload).json()
+        explicit = self.client.post(
+            "/api/simulate",
+            json={**self.payload, "incident_type": "emergency_response"},
+        ).json()
+
+        for key in ("result", "constraint_check", "score_breakdown", "explanation", "incident_type"):
+            self.assertEqual(implicit[key], explicit[key])
+
+    def test_coverage_floor_follows_the_domain(self):
+        from backend.app.api.schemas import ScenarioInput
+        from backend.app.api.services import build_scenario
+
+        emergency = build_scenario(ScenarioInput(**{**self.payload, "incident_type": "emergency_response"}))
+        delivery = build_scenario(
+            ScenarioInput(**{**self.payload, "incident_type": "delivery_fleet_capacity_planning"})
+        )
+
+        self.assertEqual(emergency.constraints.min_coverage_pct, 60)
+        self.assertEqual(delivery.constraints.min_coverage_pct, 70)
+
+    def test_unknown_incident_type_is_422(self):
+        response = self.client.post(
+            "/api/simulate",
+            json={**self.payload, "incident_type": "not_a_real_domain"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    @patch("backend.app.api.scenarios.SupabaseRepository", SuccessfulRepository)
+    def test_generate_reports_the_domain_and_its_coverage_floor(self):
+        response = self.client.post(
+            "/api/scenarios/generate",
+            json={
+                "base_scenario": {**self.payload, "incident_type": "delivery_fleet_capacity_planning"},
+                "count": 2,
+                "strategy": None,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["incident_type"], "delivery_fleet_capacity_planning")
+        for outcome in body["outcomes"]:
+            self.assertEqual(outcome["scenario"]["constraints"]["min_coverage_pct"], 70)
+
+    def test_saved_scenario_round_trips_its_domain_with_no_new_top_level_column(self):
+        from backend.app.api.schemas import ScenarioInput
+        from backend.app.api.services import build_scenario, persistence_record, run_pipeline
+
+        payload = ScenarioInput(**{**self.payload, "incident_type": "delivery_fleet_capacity_planning"})
+        scenario = build_scenario(payload)
+        outcome = run_pipeline(scenario, incident_type=payload.incident_type)
+        record = persistence_record(scenario, outcome, incident_type=payload.incident_type)
+
+        self.assertNotIn("incident_type", record)
+        self.assertEqual(record["scenario"]["incident_type"], "delivery_fleet_capacity_planning")
+
+        restored = ScenarioInput.model_validate(record["scenario"])
+        self.assertEqual(restored.incident_type, "delivery_fleet_capacity_planning")
+
+    def test_a_record_with_no_incident_type_in_the_blob_loads_as_the_default(self):
+        from backend.app.api.schemas import ScenarioInput
+        from backend.app.api.services import resolve_incident_type
+
+        stored_scenario = {**self.payload}
+        stored_scenario.pop("incident_type", None)
+
+        restored = ScenarioInput.model_validate(stored_scenario)
+        self.assertIsNone(restored.incident_type)
+        self.assertEqual(resolve_incident_type(restored.incident_type), "emergency_response")

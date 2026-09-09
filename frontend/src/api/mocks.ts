@@ -5,6 +5,7 @@ import type {
   ConstraintViolation,
   GenerateRequest,
   GenerateResponse,
+  IncidentTypesResponse,
   RankingEntry,
   RecommendResponse,
   ScenarioOutcome,
@@ -293,6 +294,21 @@ export function mockCompare(req: CompareRequest): CompareResponse {
 
 export function mockRecommend(req: CompareRequest): RecommendResponse {
   return mockCompare(req).recommendation;
+}
+
+export function mockIncidentTypes(): IncidentTypesResponse {
+  return {
+    default: "emergency_response",
+    incident_types: [
+      { id: "emergency_response", name: "emergency response", total_demand: 400, min_coverage_pct: 60 },
+      {
+        id: "delivery_fleet_capacity_planning",
+        name: "delivery fleet capacity planning",
+        total_demand: 1200,
+        min_coverage_pct: 70,
+      },
+    ],
+  };
 }
 
 export const MOCK_SCENARIO_LIST: ScenarioSummary[] = [

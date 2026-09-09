@@ -6,6 +6,7 @@ from .models import (
     ScenarioOutcome,
 )
 from .constraints import check_constraints
+from .domain_data import DEFAULT_PROFILE, INCIDENT_PROFILES, IncidentProfile
 from .explanation import explain
 from .generation import generate_variants
 from .recommendation import build_trade_offs, rank, recommend
@@ -14,6 +15,9 @@ from .simulation import simulate
 
 __all__ = [
     "Constraints",
+    "DEFAULT_PROFILE",
+    "INCIDENT_PROFILES",
+    "IncidentProfile",
     "Priorities",
     "Resources",
     "Scenario",

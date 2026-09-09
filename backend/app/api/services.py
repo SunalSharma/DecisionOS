@@ -6,6 +6,20 @@ from uuid import uuid4
 from . import engine_adapter as engine
 from .schemas import ScenarioInput, to_jsonable
 
+DEFAULT_INCIDENT_TYPE = next(
+    key for key, profile in engine.INCIDENT_PROFILES.items() if profile is engine.DEFAULT_PROFILE
+)
+
+
+def resolve_incident_type(incident_type: str | None) -> str:
+    if incident_type is not None and incident_type in engine.INCIDENT_PROFILES:
+        return incident_type
+    return DEFAULT_INCIDENT_TYPE
+
+
+def resolve_profile(incident_type: str | None):
+    return engine.INCIDENT_PROFILES[resolve_incident_type(incident_type)]
+
 
 def build_scenario(payload: ScenarioInput, scenario_id: str | None = None):
     return engine.Scenario(
@@ -14,7 +28,7 @@ def build_scenario(payload: ScenarioInput, scenario_id: str | None = None):
         resources=engine.Resources(**payload.resources.model_dump()),
         constraints=engine.Constraints(
             deadline_min=payload.constraints.deadline_min,
-            min_coverage_pct=engine.MIN_COVERAGE_PCT,
+            min_coverage_pct=resolve_profile(payload.incident_type).min_coverage_pct,
         ),
         priorities=engine.Priorities(**payload.priorities.model_dump()),
     )
@@ -24,10 +38,11 @@ def scenario_id(scenario) -> str:
     return str(getattr(scenario, "scenario_id", getattr(scenario, "id", "")))
 
 
-def run_pipeline(scenario, persisted: bool | None = None):
-    result = engine.simulate(scenario)
-    constraint_check = engine.check_constraints(scenario, result)
-    score_breakdown = engine.score(scenario, result)
+def run_pipeline(scenario, persisted: bool | None = None, incident_type: str | None = None):
+    profile = resolve_profile(incident_type)
+    result = engine.simulate(scenario, profile)
+    constraint_check = engine.check_constraints(scenario, result, profile)
+    score_breakdown = engine.score(scenario, result, profile)
     explanation = engine.explain(scenario, result, constraint_check, score_breakdown)
     outcome = engine.ScenarioOutcome(
         scenario=scenario,
@@ -44,14 +59,16 @@ def run_pipeline(scenario, persisted: bool | None = None):
     return outcome
 
 
-def persistence_record(scenario, outcome) -> dict:
+def persistence_record(scenario, outcome, incident_type: str | None = None) -> dict:
     outcome_data = to_jsonable(outcome)
     score = outcome_data.get("score_breakdown") or {}
     constraint_check = outcome_data.get("constraint_check") or {}
+    stored = to_jsonable(scenario)
+    stored["incident_type"] = resolve_incident_type(incident_type)
     return {
         "scenario_id": scenario_id(scenario),
         "name": getattr(scenario, "name", None),
-        "scenario": to_jsonable(scenario),
+        "scenario": stored,
         "result": outcome_data.get("result"),
         "constraint_check": outcome_data.get("constraint_check"),
         "score_breakdown": outcome_data.get("score_breakdown"),

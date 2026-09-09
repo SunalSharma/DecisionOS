@@ -10,7 +10,10 @@ router = APIRouter()
 
 def resolve_outcomes(payload: CompareRequest):
     if payload.scenarios:
-        return [run_pipeline(build_scenario(scenario)) for scenario in payload.scenarios]
+        return [
+            run_pipeline(build_scenario(scenario), incident_type=scenario.incident_type)
+            for scenario in payload.scenarios
+        ]
 
     repository = SupabaseRepository()
     scenarios = []
@@ -18,8 +21,11 @@ def resolve_outcomes(payload: CompareRequest):
         record = repository.get_scenario(scenario_id)
         if record is None:
             raise HTTPException(status_code=404, detail=f"Scenario not found: {scenario_id}")
-        scenarios.append(build_scenario(ScenarioInput.model_validate(record["scenario"]), scenario_id=scenario_id))
-    return [run_pipeline(scenario) for scenario in scenarios]
+        scenario_input = ScenarioInput.model_validate(record["scenario"])
+        scenarios.append(
+            (build_scenario(scenario_input, scenario_id=scenario_id), scenario_input.incident_type)
+        )
+    return [run_pipeline(scenario, incident_type=incident_type) for scenario, incident_type in scenarios]
 
 
 @router.post("/api/compare")

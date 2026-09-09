@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { FAIL_FIXTURE_REQUEST, PASS_FIXTURE_REQUEST } from "../api/mocks";
-import { simulate } from "../api/client";
+import { listIncidentTypes, simulate } from "../api/client";
 import { prioritySum, setPriorityValue, type PriorityKey } from "../lib/priorities";
-import type { Priorities, SimulateRequest, SimulateResponse } from "../types/domain";
+import type { IncidentType, Priorities, SimulateRequest, SimulateResponse } from "../types/domain";
 
 interface ScenarioBuilderProps {
   value: SimulateRequest;
@@ -27,8 +27,26 @@ export default function ScenarioBuilder({
 }: ScenarioBuilderProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [incidentTypes, setIncidentTypes] = useState<IncidentType[]>([]);
   const requestVersion = useRef(0);
   const sum = useMemo(() => prioritySum(value.priorities), [value.priorities]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listIncidentTypes()
+      .then((response) => {
+        if (!cancelled) setIncidentTypes(response.incident_types);
+      })
+      .catch(() => {
+        if (!cancelled) setIncidentTypes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedIncidentType =
+    incidentTypes.find((t) => t.id === value.incident_type) ?? incidentTypes[0];
 
   useEffect(() => {
     const version = ++requestVersion.current;
@@ -132,6 +150,31 @@ export default function ScenarioBuilder({
             Stress test
           </button>
         </div>
+
+        {incidentTypes.length > 1 ? (
+          <label className="block text-sm">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Incident domain</span>
+            <select
+              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
+              value={value.incident_type ?? incidentTypes[0]?.id ?? ""}
+              onChange={(e) => {
+                onChange({ ...value, incident_type: e.target.value || undefined });
+                onResult(null);
+              }}
+            >
+              {incidentTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            {selectedIncidentType ? (
+              <span className="mt-1 block text-xs text-slate-500">
+                Demand {selectedIncidentType.total_demand} · Coverage floor {selectedIncidentType.min_coverage_pct}%
+              </span>
+            ) : null}
+          </label>
+        ) : null}
 
         <label className="block text-sm">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Scenario label</span>

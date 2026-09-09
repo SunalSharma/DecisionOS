@@ -14,12 +14,20 @@ from backend.engine import (
     score,
     simulate,
 )
-from backend.engine.domain_data import MIN_COVERAGE_PCT
+from backend.engine.domain_data import (
+    DEFAULT_PROFILE,
+    INCIDENT_PROFILES,
+    MIN_COVERAGE_PCT,
+    IncidentProfile,
+)
 from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
 
 __all__ = [
+    "DEFAULT_PROFILE",
+    "INCIDENT_PROFILES",
     "MIN_COVERAGE_PCT",
     "Constraints",
+    "IncidentProfile",
     "Priorities",
     "Resources",
     "Scenario",

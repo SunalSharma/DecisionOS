@@ -21,6 +21,7 @@ export interface SimulateRequest {
   resources: Resources;
   constraints: Constraints;
   priorities: Priorities;
+  incident_type?: string;
 }
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
@@ -60,6 +61,19 @@ export interface SimulateResponse {
   score_breakdown: ScoreBreakdown;
   explanation: string[];
   persisted: boolean;
+  incident_type?: string;
+}
+
+export interface IncidentType {
+  id: string;
+  name: string;
+  total_demand: number;
+  min_coverage_pct: number;
+}
+
+export interface IncidentTypesResponse {
+  default: string;
+  incident_types: IncidentType[];
 }
 
 /** Outcome shape returned by generate/compare, keyed by the originating scenario. */
