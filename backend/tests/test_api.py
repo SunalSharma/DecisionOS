@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.api import compare, recommend, scenarios, simulate
 from backend.app.api import engine_adapter
+from backend.app.main import app as main_app
 from backend.engine.models import ScenarioOutcome
 
 
@@ -440,3 +442,72 @@ class IncidentDomainTests(unittest.TestCase):
         restored = ScenarioInput.model_validate(stored_scenario)
         self.assertIsNone(restored.incident_type)
         self.assertEqual(resolve_incident_type(restored.incident_type), "emergency_response")
+
+
+class OptionalApiKeyTests(unittest.TestCase):
+    """API_KEY is optional so an unconfigured demo keeps working."""
+
+    payload = {
+        "name": "Baseline",
+        "resources": {"teams": 2, "vehicles": 1, "budget": 1000},
+        "constraints": {"deadline_min": 60},
+        "priorities": {"speed": 0.5, "cost": 0.3, "coverage": 0.2},
+    }
+
+    def setUp(self):
+        self.client = TestClient(main_app)
+
+    @patch.dict(os.environ, {"API_KEY": ""}, clear=True)
+    @patch("backend.app.api.scenarios.SupabaseRepository", SuccessfulRepository)
+    @patch("backend.app.api.simulate.SupabaseRepository", SuccessfulRepository)
+    def test_auth_disabled_when_api_key_is_unset_every_endpoint_allows_no_header(self):
+        responses = [
+            self.client.post("/api/simulate", json=self.payload),
+            self.client.post(
+                "/api/scenarios/generate",
+                json={"base_scenario": self.payload, "count": 1, "strategy": None},
+            ),
+            self.client.get("/api/scenarios"),
+            self.client.post("/api/compare", json={"scenarios": [self.payload]}),
+            self.client.post("/api/recommend", json={"scenarios": [self.payload]}),
+            self.client.get("/api/incident-types"),
+        ]
+
+        self.assertTrue(all(response.status_code == 200 for response in responses))
+
+    @patch.dict(os.environ, {"API_KEY": "stage-demo-key"}, clear=True)
+    def test_configured_api_key_requires_valid_header(self):
+        missing = self.client.post("/api/compare", json={"scenarios": [self.payload]})
+        wrong = self.client.post(
+            "/api/compare",
+            json={"scenarios": [self.payload]},
+            headers={"X-API-Key": "wrong-key"},
+        )
+        correct = self.client.post(
+            "/api/compare",
+            json={"scenarios": [self.payload]},
+            headers={"X-API-Key": "stage-demo-key"},
+        )
+
+        self.assertEqual(missing.status_code, 401)
+        self.assertEqual(wrong.status_code, 401)
+        self.assertEqual(correct.status_code, 200)
+        self.assertEqual(missing.json()["detail"], "Missing or invalid API key.")
+
+    @patch.dict(os.environ, {"API_KEY": "stage-demo-key"}, clear=True)
+    def test_health_remains_open_when_auth_is_configured(self):
+        self.assertEqual(self.client.get("/health").status_code, 200)
+
+    @patch.dict(os.environ, {"API_KEY": "stage-demo-key"}, clear=True)
+    def test_cors_preflight_allows_api_key_header(self):
+        response = self.client.options(
+            "/api/compare",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "x-api-key",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("x-api-key", response.headers["access-control-allow-headers"].lower())
