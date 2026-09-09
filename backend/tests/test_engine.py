@@ -1,7 +1,10 @@
 import unittest
 
 from backend.engine.constraints import check_constraints
-from backend.engine.domain_data import DELIVERY_FLEET_CAPACITY_PLANNING_PROFILE
+from backend.engine.domain_data import (
+    DELIVERY_FLEET_CAPACITY_PLANNING_PROFILE,
+    INCIDENT_PROFILES,
+)
 from backend.engine.explanation import explain
 from backend.engine.generation import generate_variants
 from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
@@ -246,6 +249,95 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertEqual(check_constraints(failing, failing_result, profile).status, "FAIL")
         self.assertEqual(passing_result.coverage_pct, 100.0)
         self.assertLess(failing_result.coverage_pct, 70.0)
+
+    def test_every_registered_profile_has_reachable_pass_and_fail_outcomes(self) -> None:
+        for profile_key, profile in INCIDENT_PROFILES.items():
+            with self.subTest(profile=profile_key):
+                teams_for_full_coverage = (
+                    profile.total_demand + profile.team_capacity - 1
+                ) // profile.team_capacity
+                passing = Scenario(
+                    id=f"{profile_key}-pass",
+                    name=None,
+                    resources=Resources(
+                        teams=teams_for_full_coverage,
+                        vehicles=0,
+                        budget=10_000_000,
+                    ),
+                    constraints=Constraints(
+                        deadline_min=profile.base_response_time,
+                        min_coverage_pct=profile.min_coverage_pct,
+                    ),
+                    priorities=Priorities(speed=1, cost=1, coverage=1),
+                )
+                failing = Scenario(
+                    id=f"{profile_key}-fail",
+                    name=None,
+                    resources=Resources(teams=0, vehicles=0, budget=10_000_000),
+                    constraints=passing.constraints,
+                    priorities=passing.priorities,
+                )
+
+                passing_result = simulate(passing, profile)
+                failing_result = simulate(failing, profile)
+                self.assertEqual(
+                    check_constraints(passing, passing_result, profile).status,
+                    "PASS",
+                )
+                self.assertEqual(
+                    check_constraints(failing, failing_result, profile).status,
+                    "FAIL",
+                )
+
+    def test_every_registered_profile_generates_distinct_variants(self) -> None:
+        strategies = (
+            "speed_optimized",
+            "cost_optimized",
+            "balanced",
+            "perturbed",
+            "speed",
+            "cost",
+            "coverage",
+            "infeasible",
+        )
+        for profile_key, profile in INCIDENT_PROFILES.items():
+            base = Scenario(
+                id=f"{profile_key}-variants",
+                name=None,
+                resources=Resources(teams=20, vehicles=20, budget=10_000_000),
+                constraints=Constraints(
+                    deadline_min=profile.base_response_time,
+                    min_coverage_pct=profile.min_coverage_pct,
+                ),
+                priorities=Priorities(speed=1, cost=1, coverage=1),
+            )
+            for strategy in strategies:
+                with self.subTest(profile=profile_key, strategy=strategy):
+                    variants = generate_variants(
+                        base,
+                        count=10,
+                        strategy=strategy,
+                        profile=profile,
+                    )
+                    pairs = [
+                        (variant.resources.teams, variant.resources.vehicles)
+                        for variant in variants
+                    ]
+                    self.assertEqual(len(variants), 10)
+                    self.assertEqual(len(pairs), len(set(pairs)))
+
+                    if strategy == "infeasible":
+                        self.assertTrue(
+                            all(
+                                check_constraints(
+                                    variant,
+                                    simulate(variant, profile),
+                                    profile,
+                                ).status
+                                == "FAIL"
+                                for variant in variants
+                            )
+                        )
 
 
 if __name__ == "__main__":
