@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { FAIL_FIXTURE_REQUEST, PASS_FIXTURE_REQUEST } from "../api/mocks";
 import { simulate } from "../api/client";
 import { prioritySum, setPriorityValue, type PriorityKey } from "../lib/priorities";
-import type { Priorities, SimulateRequest, SimulateResponse } from "../types/domain";
+import type { IncidentType, Priorities, SimulateRequest, SimulateResponse } from "../types/domain";
 
 interface ScenarioBuilderProps {
   value: SimulateRequest;
@@ -16,6 +16,15 @@ const SLIDERS: { key: PriorityKey; label: string; hint: string }[] = [
   { key: "speed", label: "Speed", hint: "Faster response time" },
   { key: "cost", label: "Cost", hint: "Stay closer to budget" },
   { key: "coverage", label: "Coverage", hint: "Serve more demand" },
+];
+
+const INCIDENT_TYPES: { value: IncidentType; label: string }[] = [
+  { value: "emergency_response", label: "Emergency Response" },
+  { value: "delivery_fleet_capacity_planning", label: "Delivery Fleet Capacity Planning" },
+  { value: "earthquake_response", label: "Earthquake Response" },
+  { value: "tsunami_evacuation", label: "Tsunami Evacuation" },
+  { value: "wildfire_containment", label: "Wildfire Containment" },
+  { value: "industrial_accident", label: "Industrial Accident" },
 ];
 
 export default function ScenarioBuilder({
@@ -141,6 +150,19 @@ export default function ScenarioBuilder({
             onChange={(e) => patch({ name: e.target.value || null })}
             placeholder="e.g. Coastal surge"
           />
+        </label>
+
+        <label className="block text-sm">
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Incident type</span>
+          <select
+            value={value.incident_type ?? "emergency_response"}
+            onChange={(e) => patch({ incident_type: e.target.value as IncidentType })}
+            className="mission-name mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/10"
+          >
+            {INCIDENT_TYPES.map((incident) => (
+              <option key={incident.value} value={incident.value}>{incident.label}</option>
+            ))}
+          </select>
         </label>
 
         <div className="resource-grid grid grid-cols-2 gap-3 border-y border-slate-800/80 py-5">

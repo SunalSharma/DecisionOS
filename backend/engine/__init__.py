@@ -11,6 +11,7 @@ from .generation import generate_variants
 from .recommendation import build_trade_offs, rank, recommend
 from .scoring import score
 from .simulation import simulate
+from .domain_data import get_incident_profile
 
 __all__ = [
     "Constraints",
@@ -22,6 +23,7 @@ __all__ = [
     "check_constraints",
     "explain",
     "generate_variants",
+    "get_incident_profile",
     "rank",
     "recommend",
     "score",

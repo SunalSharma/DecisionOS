@@ -1,6 +1,6 @@
 """Priority-weighted scoring for simulated scenarios."""
 
-from .domain_data import BASE_RESPONSE_TIME, MIN_RESPONSE_TIME
+from .domain_data import get_incident_profile
 from .models import Scenario, ScoreBreakdown, SimulationResult
 
 
@@ -10,9 +10,10 @@ def _clamp_unit(value: float) -> float:
 
 def score(scenario: Scenario, result: SimulationResult) -> ScoreBreakdown:
     """Score favorable speed, cost, and coverage components on a 0--100 scale."""
+    profile = get_incident_profile(scenario.incident_type)
     speed_component = _clamp_unit(
-        (BASE_RESPONSE_TIME - result.response_time_min)
-        / (BASE_RESPONSE_TIME - MIN_RESPONSE_TIME)
+        (profile.base_response_time - result.response_time_min)
+        / (profile.base_response_time - profile.min_response_time)
     )
     budget = scenario.resources.budget
     cost_component = (

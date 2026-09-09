@@ -1,6 +1,7 @@
 import unittest
 
 from backend.engine.constraints import check_constraints
+from backend.engine.domain_data import get_incident_profile
 from backend.engine.explanation import explain
 from backend.engine.models import Constraints, Priorities, Resources, Scenario, ScenarioOutcome
 from backend.engine.recommendation import rank, recommend
@@ -18,6 +19,27 @@ def make_outcome(scenario: Scenario) -> ScenarioOutcome:
         constraint_check=constraint_check,
         score_breakdown=score_breakdown,
         explanation=explain(scenario, result, constraint_check, score_breakdown),
+    )
+
+
+def profile_scenario(
+    incident_type: str,
+    teams: int,
+    vehicles: int,
+    budget: float,
+    deadline_min: float,
+) -> Scenario:
+    profile = get_incident_profile(incident_type)
+    return Scenario(
+        id=incident_type,
+        name=incident_type,
+        resources=Resources(teams=teams, vehicles=vehicles, budget=budget),
+        constraints=Constraints(
+            deadline_min=deadline_min,
+            min_coverage_pct=profile.min_coverage_pct,
+        ),
+        priorities=Priorities(speed=1, cost=1, coverage=1),
+        incident_type=incident_type,
     )
 
 
@@ -107,6 +129,30 @@ class DecisionEngineTests(unittest.TestCase):
         self.assertFalse(all_failed.feasible)
         self.assertIsNone(all_failed.recommended_scenario_id)
         self.assertTrue(all_failed.reasoning)
+
+    def test_earthquake_response_profile_supports_pass_and_fail_outcomes(self) -> None:
+        passing = profile_scenario("earthquake_response", 30, 24, 2_860_000, 100)
+        failing = profile_scenario("earthquake_response", 30, 24, 1, 100)
+        self.assertEqual(check_constraints(passing, simulate(passing)).status, "PASS")
+        self.assertEqual(check_constraints(failing, simulate(failing)).status, "FAIL")
+
+    def test_tsunami_evacuation_profile_supports_pass_and_fail_outcomes(self) -> None:
+        passing = profile_scenario("tsunami_evacuation", 12, 8, 530_000, 25)
+        failing = profile_scenario("tsunami_evacuation", 12, 8, 1, 25)
+        self.assertEqual(check_constraints(passing, simulate(passing)).status, "PASS")
+        self.assertEqual(check_constraints(failing, simulate(failing)).status, "FAIL")
+
+    def test_wildfire_containment_profile_supports_pass_and_fail_outcomes(self) -> None:
+        passing = profile_scenario("wildfire_containment", 45, 15, 2_970_000, 160)
+        failing = profile_scenario("wildfire_containment", 45, 15, 1, 160)
+        self.assertEqual(check_constraints(passing, simulate(passing)).status, "PASS")
+        self.assertEqual(check_constraints(failing, simulate(failing)).status, "FAIL")
+
+    def test_industrial_accident_profile_supports_pass_and_fail_outcomes(self) -> None:
+        passing = profile_scenario("industrial_accident", 16, 10, 1_660_000, 50)
+        failing = profile_scenario("industrial_accident", 16, 10, 1, 50)
+        self.assertEqual(check_constraints(passing, simulate(passing)).status, "PASS")
+        self.assertEqual(check_constraints(failing, simulate(failing)).status, "FAIL")
 
 
 if __name__ == "__main__":

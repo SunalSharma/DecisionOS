@@ -38,6 +38,7 @@ class Scenario:
     resources: Resources
     constraints: Constraints
     priorities: Priorities
+    incident_type: str = "emergency_response"
 
 
 @dataclass

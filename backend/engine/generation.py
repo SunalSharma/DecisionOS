@@ -143,6 +143,7 @@ def generate_variants(
                 ),
                 constraints=base_scenario.constraints,
                 priorities=variant_priorities,
+                incident_type=base_scenario.incident_type,
             )
         )
 

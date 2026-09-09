@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -26,6 +26,14 @@ class ScenarioInput(BaseModel):
     resources: ResourcesInput
     constraints: ConstraintsInput
     priorities: PrioritiesInput
+    incident_type: Literal[
+        "emergency_response",
+        "delivery_fleet_capacity_planning",
+        "earthquake_response",
+        "tsunami_evacuation",
+        "wildfire_containment",
+        "industrial_accident",
+    ] = "emergency_response"
 
 
 class GenerateRequest(BaseModel):

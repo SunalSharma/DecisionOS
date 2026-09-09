@@ -16,6 +16,7 @@ try:  # pragma: no cover - exercised after the engine branch is merged
         check_constraints,
         explain,
         generate_variants,
+        get_incident_profile,
         rank,
         recommend,
         score,
@@ -84,3 +85,10 @@ except (ImportError, ModuleNotFoundError):
 
     def build_trade_offs(outcomes: list[ScenarioOutcome]) -> list[dict]:
         return []
+
+    @dataclass(frozen=True)
+    class _FallbackProfile:
+        min_coverage_pct: float = MIN_COVERAGE_PCT
+
+    def get_incident_profile(incident_type: str | None) -> _FallbackProfile:
+        return _FallbackProfile()

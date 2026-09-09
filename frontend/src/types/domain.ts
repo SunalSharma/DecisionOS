@@ -18,6 +18,7 @@ export interface Priorities {
 
 export interface SimulateRequest {
   name: string | null;
+  incident_type?: IncidentType;
   resources: Resources;
   constraints: Constraints;
   priorities: Priorities;
@@ -73,6 +74,14 @@ export interface ScenarioOutcome {
   /** Present only when the endpoint attempted to persist this outcome. */
   persisted?: boolean;
 }
+
+export type IncidentType =
+  | "emergency_response"
+  | "delivery_fleet_capacity_planning"
+  | "earthquake_response"
+  | "tsunami_evacuation"
+  | "wildfire_containment"
+  | "industrial_accident";
 
 export interface GenerateRequest {
   base_scenario: SimulateRequest;

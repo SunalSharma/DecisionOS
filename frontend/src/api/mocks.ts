@@ -181,6 +181,7 @@ function variantOf(base: SimulateRequest, index: number, strategy: string | null
 
   return {
     name: `${base.name ?? "scenario"} · v${index + 1}`,
+    incident_type: base.incident_type,
     resources: { teams, vehicles, budget },
     constraints: { deadline_min },
     priorities: { ...base.priorities },

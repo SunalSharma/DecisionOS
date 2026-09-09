@@ -7,15 +7,17 @@ from .schemas import ScenarioInput, to_jsonable
 
 
 def build_scenario(payload: ScenarioInput, scenario_id: str | None = None):
+    profile = engine.get_incident_profile(payload.incident_type)
     return engine.Scenario(
         id=scenario_id or str(uuid4()),
         name=payload.name,
         resources=engine.Resources(**payload.resources.model_dump()),
         constraints=engine.Constraints(
             deadline_min=payload.constraints.deadline_min,
-            min_coverage_pct=engine.MIN_COVERAGE_PCT,
+            min_coverage_pct=profile.min_coverage_pct,
         ),
         priorities=engine.Priorities(**payload.priorities.model_dump()),
+        incident_type=payload.incident_type,
     )
 
 
@@ -42,6 +44,9 @@ def serialize_outcome(outcome) -> dict:
     """Serialize an outcome with the stable identifier used by ranking and trade-offs."""
     data = to_jsonable(outcome)
     data["scenario_id"] = scenario_id(getattr(outcome, "scenario", outcome))
+    score_breakdown = data.get("score_breakdown")
+    if isinstance(score_breakdown, dict) and isinstance(score_breakdown.get("score"), (int, float)):
+        score_breakdown["score"] = round(score_breakdown["score"], 2)
     return data
 
 
