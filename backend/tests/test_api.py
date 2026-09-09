@@ -1,4 +1,5 @@
 import unittest
+import os
 from unittest.mock import patch
 
 from fastapi import FastAPI
@@ -30,6 +31,11 @@ class FailingRepository(SuccessfulRepository):
 
 class ApiContractTests(unittest.TestCase):
     def setUp(self):
+        self._environment = patch.dict(
+            os.environ,
+            {"DECISIONOS_API_KEY": "test-shared-key"},
+        )
+        self._environment.start()
         app = FastAPI()
         app.include_router(simulate.router)
         app.include_router(scenarios.router)
@@ -37,6 +43,7 @@ class ApiContractTests(unittest.TestCase):
         app.include_router(recommend.router)
 
         self.client = TestClient(app)
+        self.headers = {"X-API-Key": "test-shared-key"}
 
         self.payload = {
             "name": "Baseline",
@@ -55,6 +62,9 @@ class ApiContractTests(unittest.TestCase):
             },
         }
 
+    def tearDown(self):
+        self._environment.stop()
+
     def test_invalid_request_is_422(self):
         payload = {
             **self.payload,
@@ -65,7 +75,7 @@ class ApiContractTests(unittest.TestCase):
             },
         }
 
-        response = self.client.post("/api/simulate", json=payload)
+        response = self.client.post("/api/simulate", json=payload, headers=self.headers)
 
         self.assertEqual(response.status_code, 422)
 
@@ -77,6 +87,7 @@ class ApiContractTests(unittest.TestCase):
         response = self.client.post(
             "/api/simulate",
             json=self.payload,
+            headers=self.headers,
         )
 
         self.assertEqual(response.status_code, 200)
@@ -103,6 +114,7 @@ class ApiContractTests(unittest.TestCase):
         response = self.client.post(
             "/api/simulate",
             json=self.payload,
+            headers=self.headers,
         )
 
         self.assertEqual(response.status_code, 200)
@@ -120,10 +132,23 @@ class ApiContractTests(unittest.TestCase):
                 "count": 2,
                 "strategy": None,
             },
+            headers=self.headers,
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["outcomes"]), 2)
+
+    def test_mutating_endpoints_require_a_valid_api_key(self):
+        missing = self.client.post("/api/simulate", json=self.payload)
+        incorrect = self.client.post(
+            "/api/scenarios/generate",
+            json={"base_scenario": self.payload, "count": 1, "strategy": None},
+            headers={"X-API-Key": "wrong-key"},
+        )
+
+        self.assertEqual(missing.status_code, 401)
+        self.assertEqual(incorrect.status_code, 401)
+        self.assertEqual(missing.json()["detail"], "Invalid or missing API key.")
 
     @patch(
         "backend.app.api.scenarios.SupabaseRepository",
